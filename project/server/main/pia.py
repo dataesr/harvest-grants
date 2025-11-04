@@ -25,7 +25,8 @@ def get_pid(x, df_paysage, corresp):
 
 def harvest_pia_projects():
     df_pia_anr = pd.read_json(URL_ANR_PROJECTS_DGPIE, orient='split')
-    pia_anr_code = set(df_pia_anr['Projet.Code_Decision_ANR'].apply(lambda x:x[4:]).to_list())
+    code_decision = 'Projet.Code_Decision'
+    pia_anr_code = set(df_pia_anr[code_decision].apply(lambda x:x[4:]).to_list())
     df_pia = get_ods_data('fr-esr-piaweb')
     df_pia = df_pia[df_pia['code_projet'].apply(lambda x: x not in pia_anr_code)]
     # for ids

@@ -27,8 +27,9 @@ def update_anr_dgpie(args, cache_participant):
 def get_person_map(df_partners):
     person_map = {}
     for e in df_partners.to_dict(orient='records'):
-        if e['Projet.Code_Decision_ANR'] not in person_map:
-            person_map[e['Projet.Code_Decision_ANR']] = []
+        code_decision = e['Projet.Code_Decision']
+        if code_decision not in person_map:
+            person_map[code_decision] = []
         person = {}
         if isinstance(e['Projet.Partenaire.Responsable_scientifique.Nom'], str):
             person['last_name'] = e['Projet.Partenaire.Responsable_scientifique.Nom']
@@ -38,8 +39,8 @@ def get_person_map(df_partners):
             person['role'] = 'coordinator'
         else:
             person['role'] = 'participant'
-        if person and person not in person_map[e['Projet.Code_Decision_ANR']]:
-            person_map[e['Projet.Code_Decision_ANR']].append(person)
+        if person and person not in person_map[code_decision]:
+            person_map[code_decision].append(person)
         #TODO idref?
         #if isinstance(e['Projet.Partenaire.Responsable_scientifique.ORCID'], str):
         #    person['orcid'] = e['Projet.Partenaire.Responsable_scientifique.ORCID']
@@ -48,9 +49,12 @@ def get_person_map(df_partners):
 def harvest_anr_projects(project_type, cache_participant):
     if project_type=='ANR':
         df_projects1 = pd.read_json(URL_ANR_PROJECTS_05_09, orient='split')
+        df_projects1.rename(columns={"Projet.Code_Decision_ANR": "Projet.Code_Decision"}, inplace=True)
         df_projects2 = pd.read_json(URL_ANR_PROJECTS_10, orient='split')
         df_projects = pd.concat([df_projects1, df_projects2])
         df_partners1 = pd.read_json(URL_ANR_PARTNERS_05_09, orient='split')
+        df_partners1.rename(columns={"Projet.Code_Decision_ANR": "Projet.Code_Decision"}, inplace=True)
+        df_partners1.rename(columns={"Projet.Partenaire.Code_Decision_ANR": "Projet.Partenaire.Code_Decision"}, inplace=True)
         df_partners2 = pd.read_json(URL_ANR_PARTNERS_10, orient='split')
         df_partners = pd.concat([df_partners1, df_partners2])
     elif project_type == 'PIA ANR':
@@ -60,7 +64,8 @@ def harvest_anr_projects(project_type, cache_participant):
     projects, partners = [], []
     for e in df_projects.to_dict(orient='records'):
         new_elt = {}
-        new_elt['id'] = e['Projet.Code_Decision_ANR']
+        code_decision = e['Projet.Code_Decision']
+        new_elt['id'] = code_decision
         new_elt['type'] = project_type
         new_elt['name'] = {}
         if isinstance(e.get('Projet.Titre.Francais'), str):
@@ -88,13 +93,15 @@ def harvest_anr_projects(project_type, cache_participant):
             new_elt['budget_financed'] = e.get('Projet.Montant.AF.Aide_allouee.ANR')
         if isinstance(e.get('Projet.Aide_allouee'), float):
             new_elt['budget_financed'] = e.get('Projet.Aide_allouee')
-        if e['Projet.Code_Decision_ANR'] in person_map:
-            new_elt['persons'] = person_map[e['Projet.Code_Decision_ANR']]
+        if code_decision in person_map:
+            new_elt['persons'] = person_map[code_decision]
         projects.append(new_elt)
     for e in df_partners.to_dict(orient='records'):
         new_elt = {}
-        new_elt['id'] = e['Projet.Partenaire.Code_Decision_ANR']
-        new_elt['project_id'] = e['Projet.Code_Decision_ANR']
+        code_decision = e['Projet.Code_Decision']
+        code_decision_partenaire = e['Projet.Partenaire.Code_Decision']
+        new_elt['id'] = code_decision_partenaire
+        new_elt['project_id'] = code_decision
         new_elt['project_type'] = project_type
         part_id = None
         if isinstance(e.get('Projet.Partenaire.Nom_organisme'), str):
