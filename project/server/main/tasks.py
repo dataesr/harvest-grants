@@ -22,9 +22,8 @@ def create_task_update(arg):
     if arg.get('pia'):
         update_pia(arg)
     if arg.get('task'):
-        url1 = 'http://185.161.45.213/projects/tasks'
-        r = requests.post(url1, headers={"Authorization":os.getenv('AUTHORIZATION')})
+        url = 'http://185.161.45.213/projects/tasks'
+        r = requests.post(url, json={"task_name": "identify_participants"},  headers={"Authorization":os.getenv('AUTHORIZATION')})
         time.sleep(60*60*3)
-        url2 = 'http://185.161.45.213/projects/tasks'
-        r = requests.post(url2, headers={"Authorization":os.getenv('AUTHORIZATION')})
+        r = requests.post(url, json={"task_name": "etl_scanr"}, headers={"Authorization":os.getenv('AUTHORIZATION')})
         time.sleep(60*20)
