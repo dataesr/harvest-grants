@@ -10,6 +10,17 @@ logger = get_logger(__name__)
 
 ODS_API_KEY = os.getenv('ODS_API_KEY')
 
+def to_float(x):
+    try:
+        return float(x.replace(',', '.'))
+    except:
+        return None
+def to_int(x):
+    try:
+        return int(x.replace(',', '.'))
+    except:
+        return None
+
 @retry(delay=20, tries=5)
 def get_url(url, headers):
     return requests.get(url, headers=headers)
