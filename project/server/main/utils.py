@@ -10,6 +10,21 @@ logger = get_logger(__name__)
 
 ODS_API_KEY = os.getenv('ODS_API_KEY')
 
+pays_map = {
+    'BEL': 'Belgique',
+    'CHE': 'Suisse',
+    'DEU': 'Allemagne',
+    'DZA': 'Algérie',
+    'ETH': 'Éthiopie',
+    'FRA': 'France',
+    'ISR': 'Israël',
+    'ITA': 'Italie',
+    'MCO': 'Monaco',
+    'NLD': 'Pays-Bas',
+    'THA': 'Thaïlande',
+    'USA': 'États-Unis'
+}
+
 def to_float(x):
     try:
         return float(x.replace(',', '.'))
