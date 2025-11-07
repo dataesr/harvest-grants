@@ -11,14 +11,16 @@ logger = get_logger(__name__)
 URL_SIRANO = 'https://www.data.gouv.fr/api/1/datasets/r/56589f33-b66b-4b00-ae5c-fe9dcdc9a6e3'
 # check URL on a regular basis from https://www.data.gouv.fr/datasets/projets-de-recherche-appliquee-en-sante-finances-dans-le-cadre-des-appels-a-projets-du-ministere-charge-de-la-sante/
 
+project_type = 'SIRANo'
 def update_sirano(args, cache_participant):
-    reset_db('SIRANo', 'projects')
-    new_data_sirano = harvest_sirano_projects()
+    reset_db(project_type, 'projects')
+    reset_db(project_type, 'participations')
+    new_data_sirano = harvest_sirano_projects(cache_participant)
     post_data(new_data_sirano)
 
 def harvest_sirano_projects(cache_participant):
     projects, partners = [], []
-    df1 = pd.read_excel(URL_SIRANO)
+    df1 = pd.read_csv(URL_SIRANO, sep=';', encoding='iso-8859-1')
     df1.numero_tranche = df1.numero_tranche.apply(lambda x:to_int(x))
     df1.financement_total = df1.financement_total.apply(lambda x:to_float(x))
     df_sirano = pd.concat([df1]).drop_duplicates()
@@ -32,7 +34,6 @@ def harvest_sirano_projects(cache_participant):
         title_hash = hashlib.md5(e['titre'].encode()).hexdigest()
         project_id = (str(e['appel_a_projets'])+'-'+str(year)+'-'+e['acronyme']+'-'+title_hash[0:3]).upper()
         new_elt['id'] = project_id
-        project_type = 'SIRANo'
         new_elt['type'] = project_type
         new_elt['year'] = year
 
