@@ -8,69 +8,67 @@ from project.server.main.logger import get_logger
 
 logger = get_logger(__name__)
 
-URL_ILAB = 'https://data.enseignementsup-recherche.gouv.fr/api/explore/v2.1/catalog/datasets/fr-esr-laureats-concours-national-i-lab/exports/csv?lang=fr&timezone=Europe%2FBerlin&use_labels=true&delimiter=%3B'
+URL_IPHD = 'https://data.enseignementsup-recherche.gouv.fr/api/explore/v2.1/catalog/datasets/fr-esr-laureats-concours-i-phd/exports/csv?lang=fr&timezone=Europe%2FBerlin&use_labels=true&delimiter=%3B'
 
 
-project_type = 'i-LAB'
-def update_ilab(args, cache_participant):
+project_type = 'i-PHD'
+def update_iphd(args, cache_participant):
     reset_db(project_type, 'projects')
     reset_db(project_type, 'participations')
-    new_data = harvest_ilab_projects(cache_participant)
+    new_data = harvest_iphd_projects(cache_participant)
     post_data(new_data)
 
-def harvest_ilab_projects(cache_participant):
+def harvest_iphd_projects(cache_participant):
     projects, partners = [], []
-    df_ilab = pd.read_csv(URL_ILAB, sep=';')
+    df_iphd = pd.read_csv(URL_IPHD, sep=';')
     projects, partners = [], []
-    for e in df_ilab.to_dict(orient='records'):
+    for e in df_iphd.to_dict(orient='records'):
         new_elt = {}
         new_elt['type'] = project_type
         title = None
         acronym = None
-        if isinstance(e.get('Projet'), str):
-            acronym = e['Projet']
+        if isinstance(e.get('Acronyme du projet'), str):
+            acronym = e['Acronyme du projet']
             new_elt['acronym'] = acronym
-        if isinstance(e.get('Moto'), str) :
-            title=e['Moto']
-        elif isinstance(e.get('Libellé entreprise'), str) :
-            title = e['Libellé entreprise']
+            title=acronym
         else:
             continue
         new_elt['name'] =  {'fr': title}
         title_hash = hashlib.md5(title.encode()).hexdigest()
         project_id = None
-        if isinstance(e.get('Identifiant'), str):
-            project_id = 'iLAB-' + e['Identifiant'].replace(' ', '')
+        identifiant = e.get('Numero national de thèse')
+        if isinstance(identifiant, str):
+            project_id = 'iPHD-' + identifiant.replace(' ', '')
         else:
-            project_id = 'iLAB-' + title_hash[-10:]
+            project_id = 'iPHD-' + title_hash[-10:]
         if project_id:
             new_elt['id'] = project_id
         else:
             continue
-        if isinstance(e.get('Année de concours'), int):
-            new_elt['year'] = e['Année de concours']
-        if isinstance(e.get('Résumé'), str):
-            new_elt['description'] = {'fr': e['Résumé']}
+        if isinstance(e.get('Millesime'), int):
+            new_elt['year'] = e['Millesime']
+        if isinstance(e.get('Résumé du projet'), str):
+            new_elt['description'] = {'fr': e['Résumé du projet']}
 
         person = {}
-        if e.get('Nom du lauréat'):
-            person['last_name'] = e.get('Nom du lauréat')
+        if e.get('Nom'):
+            person['last_name'] = e.get('Nom')
             person['role'] = 'coordinator'
-        if e.get('Prénom du candidat'):
-            person['first_name'] = e.get('Prénom du candidat')
+        if e.get('Prenom'):
+            person['first_name'] = e.get('Prenom')
         if person:
             new_elt['persons'] = [person]
 
         projects.append(new_elt)
 
-        if isinstance(e.get('Libellé entreprise'), str):
+        if isinstance(e.get('Structure de transfert de technologie'), str):
             new_elt_partner = {}
             new_elt_partner['id'] = project_id + '-01'
             new_elt_partner['project_id'] = project_id
             new_elt_partner['project_type'] = project_type
-            siren = str(e['N° SIREN']).replace('.0', '')
+            siren = str(e['Code Structure de transfert de technologie']).replace('.0', '')
             part_id = None
-            new_elt_partner['name'] = e.get('Libellé entreprise')
+            new_elt_partner['name'] = e.get('Structure de transfert de technologie')
             if len(siren)==9:
                 part_id = siren
             else:
@@ -84,14 +82,14 @@ def harvest_ilab_projects(cache_participant):
             if new_elt_partner not in partners:
                 partners.append(new_elt_partner)
 
-        if isinstance(e.get('Unité de recherche liée au projet'), str):
+        if isinstance(e.get('Laboratoire'), str):
             new_elt_partner = {}
             new_elt_partner['id'] = project_id + '-02'
             new_elt_partner['project_id'] = project_id
             new_elt_partner['project_type'] = project_type
-            rnsr = str(e["Id de l'unité de recherche liée au projet"]).replace('.0', '')
+            rnsr = str(e["Code Laboratoire"]).replace('.0', '')
             part_id = None
-            new_elt_partner['name'] = e.get('Unité de recherche liée au projet')
+            new_elt_partner['name'] = e.get('Laboratoire')
             if len(rnsr)==10:
                 part_id = rnsr
             else:
@@ -104,5 +102,5 @@ def harvest_ilab_projects(cache_participant):
                 new_elt_partner['identified'] = False
             if new_elt_partner not in partners:
                 partners.append(new_elt_partner)
-    
+
     return {'projects': projects, 'partners': partners}

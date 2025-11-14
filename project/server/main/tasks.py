@@ -10,6 +10,8 @@ from project.server.main.sirano import update_sirano
 from project.server.main.dim import update_dim
 from project.server.main.anses import update_anses
 from project.server.main.ilab import update_ilab
+from project.server.main.iphd import update_iphd
+from project.server.main.inov import update_inov
 
 from project.server.main.logger import get_logger
 
@@ -17,7 +19,7 @@ logger = get_logger(__name__)
 
 def test():
     cache_participant = enrich_cache()
-    update_ilab({}, cache_participant)
+    update_inov({}, cache_participant)
 
 def create_task_update(arg):
     cache_participant = enrich_cache()
@@ -33,6 +35,12 @@ def create_task_update(arg):
         update_dim(arg, cache_participant)
     if arg.get('anses'):
         update_anses(arg, cache_participant)
+    if arg.get('ilab'):
+        update_ilab(arg, cache_participant)
+    if arg.get('iphd'):
+        update_iphd(arg, cache_participant)
+    if arg.get('inov'):
+        update_inov(arg, cache_participant)
     if arg.get('pia'):
         update_pia(arg)
     if arg.get('task'):
