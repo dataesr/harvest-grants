@@ -8,6 +8,7 @@ from project.server.main.inca import update_inca
 from project.server.main.pia import update_pia
 from project.server.main.sirano import update_sirano
 from project.server.main.dim import update_dim
+from project.server.main.anses import update_anses
 
 from project.server.main.logger import get_logger
 
@@ -25,6 +26,8 @@ def create_task_update(arg):
         update_sirano(arg, cache_participant)
     if arg.get('dim'):
         update_dim(arg, cache_participant)
+    if arg.get('anses'):
+        update_anses(arg, cache_participant)
     if arg.get('pia'):
         update_pia(arg)
     if arg.get('task'):
