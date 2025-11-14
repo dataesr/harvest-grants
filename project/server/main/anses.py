@@ -13,7 +13,7 @@ logger = get_logger(__name__)
 project_type = 'ANSES'
 def update_anses(args, cache_participant):
     reset_db_projects_and_partners(project_type)
-    new_data_anses = harvest_anses_projects(args, cache_participant)
+    new_data_anses = harvest_anses_projects(cache_participant)
     post_data(data = new_data_anses)
 
 def get_person_map(df_partners):
@@ -42,7 +42,7 @@ def get_person_map(df_partners):
                 person_map[code_decision].append(person)
     return person_map
 
-def harvest_anses_projects(project_type, cache_participant):
+def harvest_anses_projects(cache_participant):
     df_projects = pd.read_csv(URL_ANSES_PROJECTS, sep=';', encoding='iso-8859-1')
     df_partners = pd.read_csv(URL_ANSES_PARTNERS, sep=';', encoding='iso-8859-1', skiprows=1)
 
@@ -119,5 +119,6 @@ def harvest_anses_projects(project_type, cache_participant):
                     address['country'] = e.get(f'Pays{suf}')
                 if address:
                     new_elt['address'] = address
-        partners.append(new_elt)
+                if new_elt not in partners:
+                    partners.append(new_elt)
     return {'projects': projects, 'partners': partners}

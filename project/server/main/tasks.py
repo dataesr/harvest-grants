@@ -14,6 +14,10 @@ from project.server.main.logger import get_logger
 
 logger = get_logger(__name__)
 
+def test():
+    cache_participant = enrich_cache()
+    update_anses({}, cache_participant)
+
 def create_task_update(arg):
     cache_participant = enrich_cache()
     if arg.get('anr_dos'):
