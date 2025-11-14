@@ -9,6 +9,7 @@ from project.server.main.pia import update_pia
 from project.server.main.sirano import update_sirano
 from project.server.main.dim import update_dim
 from project.server.main.anses import update_anses
+from project.server.main.ilab import update_ilab
 
 from project.server.main.logger import get_logger
 
@@ -16,7 +17,7 @@ logger = get_logger(__name__)
 
 def test():
     cache_participant = enrich_cache()
-    update_anses({}, cache_participant)
+    update_ilab({}, cache_participant)
 
 def create_task_update(arg):
     cache_participant = enrich_cache()
