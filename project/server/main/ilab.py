@@ -36,7 +36,7 @@ def harvest_ilab_projects(cache_participant):
             title = e['Libellé entreprise']
         else:
             continue
-        new_elt['name'] =  {'fr': title}
+        new_elt['name'] =  {'fr': title, 'default': title}
         title_hash = hashlib.md5(title.encode()).hexdigest()
         project_id = None
         if isinstance(e.get('Identifiant'), str):
@@ -50,7 +50,7 @@ def harvest_ilab_projects(cache_participant):
         if isinstance(e.get('Année de concours'), int):
             new_elt['year'] = e['Année de concours']
         if isinstance(e.get('Résumé'), str):
-            new_elt['description'] = {'fr': e['Résumé']}
+            new_elt['description'] = {'fr': e['Résumé'], 'default': e['Résumé']}
 
         person = {}
         if e.get('Nom du lauréat'):

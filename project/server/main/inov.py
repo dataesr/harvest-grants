@@ -35,7 +35,7 @@ def harvest_inov_projects(cache_participant):
             continue
         if isinstance(e.get('Slogan du projet lauréat'), str):
             title = e.get('Slogan du projet lauréat')
-        new_elt['name'] =  {'fr': title}
+        new_elt['name'] =  {'fr': title, 'default': title}
         
         title_hash = hashlib.md5(title.encode()).hexdigest()
         project_id = None
@@ -48,10 +48,12 @@ def harvest_inov_projects(cache_participant):
         if isinstance(e.get('Date de publication des résultats'), str):
             new_elt['year'] = int(e.get('Date de publication des résultats')[0:4])
         if isinstance(e.get('Résumé du projet lauréat'), str):
-            new_elt['description'] = {'fr': e['Résumé du projet lauréat']}
+            new_elt['description'] = {'fr': e['Résumé du projet lauréat'], 'default': e['Résumé du projet lauréat']}
             
         if isinstance(e.get('Montant de la subvention accordée (en €)'), float):
             new_elt['budget_financed'] = e.get('Montant de la subvention accordée (en €)')
+        if isinstance(e.get('Montant total du projet lauréat (en €)'), float):
+            new_elt['budget_total'] = e.get('Montant total du projet lauréat (en €)')
 
         if new_elt['id'] not in [k['id'] for k in projects]:
             projects.append(new_elt)

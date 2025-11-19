@@ -40,7 +40,8 @@ def harvest_pia_projects():
     projects = []
     for e in df_projects.to_dict(orient='records'):
         new_elt = {}
-        new_elt['id'] = e['code_projet']
+        project_id = e['code_projet'].replace(' ', '_').lower().replace('é', 'e').replace('è', 'e')
+        new_elt['id'] = project_id
         new_elt['type'] = project_type
         if isinstance(e.get('debut_du_projet'), str):
             try:
@@ -66,12 +67,12 @@ def harvest_pia_projects():
     nb_partners_map = {}
     for e in df_pia.to_dict(orient='records'):
         new_part = {}
-        new_part['project_id'] = e['code_projet']
-        if e['code_projet'] not in nb_partners_map:
-            nb_partners_map[e['code_projet']] = 0
-        nb_partners_map[e['code_projet']] += 1
+        new_part['project_id'] = project_id
+        if project_id not in nb_partners_map:
+            nb_partners_map[project_id] = 0
+        nb_partners_map[project_id] += 1
         new_part['project_type'] = project_type
-        new_part['id'] = e['code_projet'] + '-' + str(nb_partners_map[e['code_projet']]).zfill(2)
+        new_part['id'] = project_id + '-' + str(nb_partners_map[project_id]).zfill(2)
         part_id = None
         if isinstance(e.get("etablissement"), str):
             new_part['name'] = e["etablissement"]

@@ -33,7 +33,7 @@ def harvest_iphd_projects(cache_participant):
             title=acronym
         else:
             continue
-        new_elt['name'] =  {'fr': title}
+        new_elt['name'] =  {'fr': title, 'default': title}
         title_hash = hashlib.md5(title.encode()).hexdigest()
         project_id = None
         identifiant = e.get('Numero national de thèse')
@@ -48,7 +48,7 @@ def harvest_iphd_projects(cache_participant):
         if isinstance(e.get('Millesime'), int):
             new_elt['year'] = e['Millesime']
         if isinstance(e.get('Résumé du projet'), str):
-            new_elt['description'] = {'fr': e['Résumé du projet']}
+            new_elt['description'] = {'fr': e['Résumé du projet'], 'default': e['Résumé du projet']}
 
         person = {}
         if e.get('Nom'):
