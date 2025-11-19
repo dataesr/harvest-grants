@@ -87,12 +87,15 @@ def harvest_dim_projects(cache_participant):
             new_elt['name']['en'] = e['Titre du projet (en)'].replace("\xa0", " ")
 
         new_elt['description'] = {}
-        if isinstance(e.get('Résumé du projet (fr)'), str):
-            new_elt['description']['fr'] = e['Résumé du projet (fr)'].replace("\xa0", " ")
         if isinstance(e.get('Résumé du projet (en)'), str):
             new_elt['description']['en'] = e['Résumé du projet (en)'].replace("\xa0", " ")
+            new_elt['description']['default'] = e['Résumé du projet (en)'].replace("\xa0", " ")
+        if isinstance(e.get('Résumé du projet (fr)'), str):
+            new_elt['description']['fr'] = e['Résumé du projet (fr)'].replace("\xa0", " ")
+            new_elt['description']['default'] = e['Résumé du projet (fr)'].replace("\xa0", " ")
         if isinstance( e.get('Subvention allouée'), float):
-            new_elt['budget_financed'] = e.get('Subvention allouée')
+            if e.get('Subvention allouée') == e.get('Subvention allouée'):
+                new_elt['budget_financed'] = e.get('Subvention allouée')
         projects.append(new_elt)
 
     cols_partners = ['Identifiant du projet', 'Acronyme de l’entité', 'Rôle de l’entité dans le partenariat']

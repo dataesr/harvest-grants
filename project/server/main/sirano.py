@@ -45,7 +45,8 @@ def harvest_sirano_projects(cache_participant):
             description['fr'] = e['numero_registre_essais']
         if description:
             new_elt['description'] = description
-        new_elt['budget_financed'] = e.get('financement_total')
+        if e.get('financement_total') == e.get('financement_total'):
+            new_elt['budget_total'] = e.get('financement_total')
         person = {}
         if isinstance(e.get('nom_porteur'), str):
             person['last_name'] = e.get('nom_porteur')

@@ -64,7 +64,8 @@ def harvest_inca_projects(cache_participant):
             new_elt['action'] = [{'level': '1', 'code': e.get('Nom AAP & millésime'), 'name': e.get('Nom AAP & millésime')}]
 
         if isinstance(e.get('Montant attribué'), float) or isinstance(e.get('Montant attribué'), int):
-            new_elt['budget_financed'] = float(e.get('Montant attribué'))
+            if e.get('Montant attribué') == e.get('Montant attribué'):
+                new_elt['budget_financed'] = float(e.get('Montant attribué'))
         elif isinstance(e.get('Montant attribué'), str):
             new_elt['budget_financed'] = float(e.get('Montant attribué').replace('€', '')\
                                                .replace('\xa0', '').replace(',', '.')\

@@ -90,9 +90,11 @@ def harvest_anr_projects(project_type, cache_participant):
         if isinstance(e.get('Action.Edition'), int):
             new_elt['year'] = e.get('Action.Edition')
         if isinstance(e.get('Projet.Montant.AF.Aide_allouee.ANR'), float):
-            new_elt['budget_financed'] = e.get('Projet.Montant.AF.Aide_allouee.ANR')
+            if e.get('Projet.Montant.AF.Aide_allouee.ANR') ==  e.get('Projet.Montant.AF.Aide_allouee.ANR'):
+                new_elt['budget_financed'] = e.get('Projet.Montant.AF.Aide_allouee.ANR')
         if isinstance(e.get('Projet.Aide_allouee'), float):
-            new_elt['budget_financed'] = e.get('Projet.Aide_allouee')
+            if e.get('Projet.Aide_allouee') == e.get('Projet.Aide_allouee'):
+                new_elt['budget_total'] = e.get('Projet.Aide_allouee')
         if code_decision in person_map:
             new_elt['persons'] = person_map[code_decision]
         projects.append(new_elt)

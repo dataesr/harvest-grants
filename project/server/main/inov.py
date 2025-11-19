@@ -51,9 +51,11 @@ def harvest_inov_projects(cache_participant):
             new_elt['description'] = {'fr': e['Résumé du projet lauréat'], 'default': e['Résumé du projet lauréat']}
             
         if isinstance(e.get('Montant de la subvention accordée (en €)'), float):
-            new_elt['budget_financed'] = e.get('Montant de la subvention accordée (en €)')
+            if e.get('Montant de la subvention accordée (en €)') == e.get('Montant de la subvention accordée (en €)'):
+                new_elt['budget_financed'] = e.get('Montant de la subvention accordée (en €)')
         if isinstance(e.get('Montant total du projet lauréat (en €)'), float):
-            new_elt['budget_total'] = e.get('Montant total du projet lauréat (en €)')
+            if e.get('Montant total du projet lauréat (en €)') == e.get('Montant total du projet lauréat (en €)'):
+                new_elt['budget_total'] = e.get('Montant total du projet lauréat (en €)')
 
         if new_elt['id'] not in [k['id'] for k in projects]:
             projects.append(new_elt)
