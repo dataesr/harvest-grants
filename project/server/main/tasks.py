@@ -23,25 +23,25 @@ def test():
 
 def create_task_update(arg):
     cache_participant = enrich_cache()
-    if arg.get('anr_dos'):
+    if arg.get('anr_dos') or arg.get('all'):
         update_anr_dos(arg, cache_participant)
-    if arg.get('anr_dgpie'):
+    if arg.get('anr_dgpie') or arg.get('all'):
         update_anr_dgpie(arg, cache_participant)
-    if arg.get('inca'):
+    if arg.get('inca') or arg.get('all'):
         update_inca(arg, cache_participant)
-    if arg.get('sirano'):
+    if arg.get('sirano') or arg.get('all'):
         update_sirano(arg, cache_participant)
-    if arg.get('dim'):
+    if arg.get('dim') or arg.get('all'):
         update_dim(arg, cache_participant)
-    if arg.get('anses'):
+    if arg.get('anses') or arg.get('all'):
         update_anses(arg, cache_participant)
-    if arg.get('ilab'):
+    if arg.get('ilab') or arg.get('all'):
         update_ilab(arg, cache_participant)
-    if arg.get('iphd'):
+    if arg.get('iphd') or arg.get('all'):
         update_iphd(arg, cache_participant)
-    if arg.get('inov'):
+    if arg.get('inov') or arg.get('all'):
         update_inov(arg, cache_participant)
-    if arg.get('pia'):
+    if arg.get('pia') or arg.get('all'):
         update_pia(arg)
     if arg.get('task'):
         url = 'http://185.161.45.213/projects/tasks'
