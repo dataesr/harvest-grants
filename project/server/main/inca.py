@@ -7,9 +7,10 @@ from project.server.main.logger import get_logger
 
 logger = get_logger(__name__)
 
-URL_INCA_2020_2021 = 'https://www.data.gouv.fr/api/1/datasets/r/14df9170-a0f9-4d52-8f91-ebecb8fcfc30'
-URL_INCA_2008_2019 = 'https://www.data.gouv.fr/api/1/datasets/r/9f5ab856-9b65-4446-a014-474e76fcd4db'
-URL_INCA_2022 = 'https://www.data.gouv.fr/api/1/datasets/r/9411c01a-5c91-467f-846c-70c9f2631c0c'
+#URL_INCA_2020_2021 = 'https://www.data.gouv.fr/api/1/datasets/r/14df9170-a0f9-4d52-8f91-ebecb8fcfc30'
+#URL_INCA_2008_2019 = 'https://www.data.gouv.fr/api/1/datasets/r/9f5ab856-9b65-4446-a014-474e76fcd4db'
+#URL_INCA_2022 = 'https://www.data.gouv.fr/api/1/datasets/r/9411c01a-5c91-467f-846c-70c9f2631c0c'
+URL_INCA = 'https://www.data.gouv.fr/api/1/datasets/r/478b1659-1b3c-4cd6-8f47-190a5bf542a9'
 
 def update_inca(args, cache_participant):
     reset_db('INCa', 'projects')
@@ -19,10 +20,11 @@ def update_inca(args, cache_participant):
 
 def harvest_inca_projects(cache_participant):
     projects, partners = [], []
-    df1 = pd.read_excel(URL_INCA_2020_2021)
-    df2 = pd.read_excel(URL_INCA_2008_2019)
-    df3 = pd.read_excel(URL_INCA_2022)
-    df_inca = pd.concat([df1, df2, df3]).drop_duplicates()
+    #df1 = pd.read_excel(URL_INCA_2020_2021)
+    #df2 = pd.read_excel(URL_INCA_2008_2019)
+    #df3 = pd.read_excel(URL_INCA_2022)
+    #df_inca = pd.concat([df1, df2, df3]).drop_duplicates()
+    df_inca = pd.read_excel(URL_INCA).drop_duplicates()
     for e in df_inca.to_dict(orient='records'):
         new_elt = {}
         project_id = str(e['N° subvention']).replace('\xa0', '')
