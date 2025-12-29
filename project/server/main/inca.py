@@ -1,8 +1,9 @@
 import pandas as pd
 import os
 import requests
+from retry import retry
 from project.server.main.participants import identify_participant, enrich_cache
-from project.server.main.utils import reset_db, upload_elt, post_data
+from project.server.main.utils import reset_db, upload_elt, post_data, transform_scanr
 from project.server.main.logger import get_logger
 
 logger = get_logger(__name__)
@@ -12,12 +13,17 @@ logger = get_logger(__name__)
 #URL_INCA_2022 = 'https://www.data.gouv.fr/api/1/datasets/r/9411c01a-5c91-467f-846c-70c9f2631c0c'
 URL_INCA = 'https://www.data.gouv.fr/api/1/datasets/r/478b1659-1b3c-4cd6-8f47-190a5bf542a9'
 
+def update_inca_v2(args, cache_participant):
+    new_data_inca = harvest_inca_projects(cache_participant)
+    transform_scanr(new_data_inca)
+
 def update_inca(args, cache_participant):
     reset_db('INCa', 'projects')
     reset_db('INCa', 'participations')
     new_data_inca = harvest_inca_projects(cache_participant)
     post_data(new_data_inca)
 
+@retry(delay=20, tries=3)
 def harvest_inca_projects(cache_participant):
     projects, partners = [], []
     #df1 = pd.read_excel(URL_INCA_2020_2021)

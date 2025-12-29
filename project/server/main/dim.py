@@ -3,7 +3,7 @@ import os
 import hashlib
 import requests
 from project.server.main.participants import identify_participant, enrich_cache
-from project.server.main.utils import reset_db, upload_elt, post_data, pays_map
+from project.server.main.utils import reset_db, upload_elt, post_data, pays_map, transform_scanr
 from project.server.main.logger import get_logger
 
 logger = get_logger(__name__)
@@ -15,6 +15,10 @@ URL_DIM_MAP_PARTNERS_DESC_1 = 'https://www.data.gouv.fr/api/1/datasets/r/41b7c23
 URL_DIM_PAMIR_PROJETS_1 = 'https://www.data.gouv.fr/api/1/datasets/r/3f0893d9-2593-4b06-b10f-4697a4f17c18'
 URL_DIM_PAMIR_PARTNERS_1 ='https://www.data.gouv.fr/api/1/datasets/r/6810f427-9e60-46b8-865a-105c068bcb4e'
 URL_DIM_PAMIR_PARTNERS_DESC_1 = 'https://www.data.gouv.fr/api/1/datasets/r/53bbbe72-54fc-442c-a28a-ccf684ec0be7'
+
+def update_dim_v2(args, cache_participant):
+    new_data = harvest_dim_projects(cache_participant)
+    transform_scanr(new_data)
 
 project_type = 'DIM Ile-de-France'
 def update_dim(args, cache_participant):

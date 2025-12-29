@@ -26,6 +26,26 @@ pays_map = {
     'USA': 'États-Unis'
 }
 
+def transform_scanr(new_data):
+    projects = new_data['projects']
+    partners_map = {}
+    for p in new_data['partners']:
+        if p['project_id'] not in partners_map:
+            partners_map[p['project_id']] = []
+        new_elem = {}
+        if 'role' in p:
+            new_elem['role'] = p['role']
+        if 'participant_id' in p:
+            new_elem['structure'] = p['participant_id']
+        if 'name' in p:
+            new_elem['label'] = {'default': p['name'] + '__-__' + p['id']}
+        partners_map[p['project_id']].append(new_elem)
+    for proj in projects:
+        if proj['id'] in partners_map:
+            proj['participants'] = partners_map[proj['id']]
+    logger.debug(f'adding {len(projects)} projects')
+    to_jsonl(projects, 'projects.jsonl') 
+
 def to_float(x):
     try:
         return float(x.replace(',', '.'))
@@ -49,6 +69,7 @@ def post_url(url, json, headers):
 def delete_url(url, headers):
     return requests.delete(url, headers=headers)
 
+@retry(delay=20, tries=3)
 def get_ods_data(key):
     logger.debug(f'getting ods data {key}')
     current_df = pd.read_csv(f'https://data.enseignementsup-recherche.gouv.fr/explore/dataset/{key}/download/?format=csv&apikey={ODS_API_KEY}', sep=';')

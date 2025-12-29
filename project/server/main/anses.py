@@ -1,14 +1,19 @@
 import pandas as pd
 import os
 import requests
+from retry import retry
 from project.server.main.participants import identify_participant, enrich_cache
-from project.server.main.utils import reset_db, upload_elt, post_data, reset_db_projects_and_partners
+from project.server.main.utils import reset_db, upload_elt, post_data, reset_db_projects_and_partners, transform_scanr
 from project.server.main.logger import get_logger
 
 URL_ANSES_PROJECTS = 'https://www.data.gouv.fr/api/1/datasets/r/ea1a1cc1-911f-4b0d-84ba-3d6447c255d7'
 URL_ANSES_PARTNERS= 'https://www.data.gouv.fr/api/1/datasets/r/0c4252ad-b1dc-4e1d-84da-fd8afc4094fb'
 
 logger = get_logger(__name__)
+
+def update_anses_v2(args, cache_participant):
+    new_data = harvest_anses_projects(cache_participant)
+    transform_scanr(new_data)
 
 project_type = 'ANSES'
 def update_anses(args, cache_participant):
@@ -42,6 +47,7 @@ def get_person_map(df_partners):
                 person_map[code_decision].append(person)
     return person_map
 
+@retry(delay=20, tries=3)
 def harvest_anses_projects(cache_participant):
     df_projects = pd.read_csv(URL_ANSES_PROJECTS, sep=';', encoding='iso-8859-1')
     df_partners = pd.read_csv(URL_ANSES_PARTNERS, sep=';', encoding='iso-8859-1', skiprows=1)

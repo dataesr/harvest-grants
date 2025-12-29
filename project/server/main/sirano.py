@@ -3,13 +3,17 @@ import os
 import hashlib
 import requests
 from project.server.main.participants import identify_participant, enrich_cache
-from project.server.main.utils import reset_db, upload_elt, post_data, to_int, to_float
+from project.server.main.utils import reset_db, upload_elt, post_data, to_int, to_float, transform_scanr
 from project.server.main.logger import get_logger
 
 logger = get_logger(__name__)
 
 URL_SIRANO = 'https://www.data.gouv.fr/api/1/datasets/r/56589f33-b66b-4b00-ae5c-fe9dcdc9a6e3'
 # check URL on a regular basis from https://www.data.gouv.fr/datasets/projets-de-recherche-appliquee-en-sante-finances-dans-le-cadre-des-appels-a-projets-du-ministere-charge-de-la-sante/
+
+def update_sirano_v2(args, cache_participant):
+    new_data = harvest_sirano_projects(cache_participant)
+    transform_scanr(new_data)
 
 project_type = 'SIRANo'
 def update_sirano(args, cache_participant):

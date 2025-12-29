@@ -1,8 +1,9 @@
 import pandas as pd
 import os
 import requests
+from retry import retry
 from project.server.main.participants import identify_participant, enrich_cache
-from project.server.main.utils import reset_db, upload_elt, post_data, reset_db_projects_and_partners
+from project.server.main.utils import reset_db, upload_elt, post_data, reset_db_projects_and_partners, transform_scanr
 from project.server.main.logger import get_logger
 
 URL_ANR_PROJECTS_05_09 = 'https://www.data.gouv.fr/api/1/datasets/r/a16e0fd7-a008-499b-bbd3-b640f8651bd9'
@@ -13,6 +14,14 @@ URL_ANR_PROJECTS_DGPIE = 'https://www.data.gouv.fr/api/1/datasets/r/d9b2d1e7-0c8
 URL_ANR_PARTNERS_DGPIE = 'https://www.data.gouv.fr/api/1/datasets/r/559459fb-b947-44b7-849c-9287b1ef1134'
 
 logger = get_logger(__name__)
+
+def update_anr_v2(args, cache_participant):
+    new_data_anr = harvest_anr_projects('ANR', cache_participant)
+    transform_scanr(new_data_anr)
+
+    new_data_pia = harvest_anr_projects('PIA ANR', cache_participant)
+    transform_scanr(new_data_pia)
+
 
 def update_anr_dos(args, cache_participant):
     reset_db_projects_and_partners('ANR')
@@ -46,6 +55,8 @@ def get_person_map(df_partners):
         #    person['orcid'] = e['Projet.Partenaire.Responsable_scientifique.ORCID']
     return person_map
 
+
+@retry(delay=20, tries=3)
 def harvest_anr_projects(project_type, cache_participant):
     if project_type=='ANR':
         df_projects1 = pd.read_json(URL_ANR_PROJECTS_05_09, orient='split')

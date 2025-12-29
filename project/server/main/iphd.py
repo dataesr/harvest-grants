@@ -2,14 +2,18 @@ import pandas as pd
 import os
 import hashlib
 import requests
+from retry import retry
 from project.server.main.participants import identify_participant, enrich_cache
-from project.server.main.utils import reset_db, upload_elt, post_data, to_int, to_float
+from project.server.main.utils import reset_db, upload_elt, post_data, to_int, to_float, transform_scanr
 from project.server.main.logger import get_logger
 
 logger = get_logger(__name__)
 
 URL_IPHD = 'https://data.enseignementsup-recherche.gouv.fr/api/explore/v2.1/catalog/datasets/fr-esr-laureats-concours-i-phd/exports/csv?lang=fr&timezone=Europe%2FBerlin&use_labels=true&delimiter=%3B'
 
+def update_iphd_v2(args, cache_participant):
+    new_data = harvest_iphd_projects(cache_participant)
+    transform_scanr(new_data)
 
 project_type = 'i-PHD'
 def update_iphd(args, cache_participant):
@@ -18,6 +22,7 @@ def update_iphd(args, cache_participant):
     new_data = harvest_iphd_projects(cache_participant)
     post_data(new_data)
 
+@retry(delay=20, tries=3)
 def harvest_iphd_projects(cache_participant):
     projects, partners = [], []
     df_iphd = pd.read_csv(URL_IPHD, sep=';')

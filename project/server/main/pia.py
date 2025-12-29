@@ -2,11 +2,15 @@ import pandas as pd
 import os
 import requests
 from project.server.main.participants import identify_participant, enrich_cache
-from project.server.main.utils import reset_db, upload_elt, post_data, get_ods_data, get_all_struct, build_correspondance_structures
+from project.server.main.utils import reset_db, upload_elt, post_data, get_ods_data, get_all_struct, build_correspondance_structures, transform_scanr
 from project.server.main.anr import URL_ANR_PROJECTS_DGPIE
 from project.server.main.logger import get_logger
 
 logger = get_logger(__name__)
+
+def update_pia_v2(args):
+    new_data = harvest_pia_projects()
+    transform_scanr(new_data)
 
 project_type = 'PIA hors ANR'
 def update_pia(args):

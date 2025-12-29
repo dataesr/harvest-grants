@@ -33,9 +33,9 @@ def get_participants(project_id, part_dict):
     for part in part_dict[project_id]:
         participation = {}
         participation['funding'] = part['fund_eur']
-        participation['id'] = part['entities_id']
+        participation['structure'] = part['entities_id']
         participation['role'] = part['role'].lower()
-        participation['label'] = {'default': part['entities_name']}
+        participation['label'] = {'default': part['entities_name'] + '__-__' + str(part['entities_id'])}
         participation['participates_as'] = part['participates_as']
         participants.append(participation)
     return participants

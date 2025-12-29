@@ -2,13 +2,18 @@ import pandas as pd
 import os
 import hashlib
 import requests
+from retry import retry
 from project.server.main.participants import identify_participant, enrich_cache
-from project.server.main.utils import reset_db, upload_elt, post_data, to_int, to_float
+from project.server.main.utils import reset_db, upload_elt, post_data, to_int, to_float, transform_scanr
 from project.server.main.logger import get_logger
 
 logger = get_logger(__name__)
 
 URL_INOV = 'https://data.enseignementsup-recherche.gouv.fr/api/explore/v2.1/catalog/datasets/fr-esr-laureats-concours-i-nov/exports/csv/?delimiters=%3B&lang=fr&timezone=Europe%2FParis&use_labels=true'
+
+def update_inov_v2(args, cache_participant):
+    new_data = harvest_inov_projects(cache_participant)
+    transform_scanr(new_data)
 
 project_type = 'i-NOV'
 def update_inov(args, cache_participant):
@@ -17,6 +22,7 @@ def update_inov(args, cache_participant):
     new_data = harvest_inov_projects(cache_participant)
     post_data(new_data)
 
+@retry(delay=20, tries=3)
 def harvest_inov_projects(cache_participant):
     projects, partners = [], []
     df_inov = pd.read_csv(URL_INOV, sep=';')
