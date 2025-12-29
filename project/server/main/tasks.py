@@ -12,6 +12,7 @@ from project.server.main.anses import update_anses
 from project.server.main.ilab import update_ilab
 from project.server.main.iphd import update_iphd
 from project.server.main.inov import update_inov
+from project.server.main.pcri import update_pcri
 
 from project.server.main.logger import get_logger
 
@@ -23,6 +24,8 @@ def test():
 
 def create_task_update(arg):
     cache_participant = enrich_cache()
+    if arg.get('pcri') or arg.get('all'):
+        update_pcri(arg, cache_participant)
     if arg.get('anr_dos') or arg.get('all'):
         update_anr_dos(arg, cache_participant)
     if arg.get('anr_dgpie') or arg.get('all'):

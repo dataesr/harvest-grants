@@ -2,35 +2,54 @@ import pandas as pd
 import os
 import requests
 from project.server.main.participants import identify_participant, enrich_cache
-from project.server.main.utils import reset_db, upload_elt, post_data, get_ods_data, get_all_struct, build_correspondance_structures
-from project.server.main.anr import URL_ANR_PROJECTS_DGPIE
+from project.server.main.utils import reset_db, upload_elt, post_data, get_ods_data, get_all_struct, build_correspondance_structures, to_jsonl
 from project.server.main.logger import get_logger
 
 logger = get_logger(__name__)
 
-project_type = 'PIA hors ANR'
-def update_pcri(args):
-    reset_db(project_type, 'projects')
-    reset_db(project_type, 'participations')
-    new_data_pia = harvest_pia_projects()
-    post_data(new_data_pia)
+def update_pcri(args, cache_participant):
+    #reset_db(project_type, 'projects')
+    #reset_db(project_type, 'participations')
+    new_data_pcri = harvest_pcri_projects()
+    to_jsonl(new_data_pcri, 'projects.jsonl')
+    #post_data(new_data_pia)
 
-def harvest_pcri_projects():
-    df_projects = get_ods_data('fr-esr-all-projects-signed-informations')
-    
+def get_part_dict():
     df_horizon_part = get_ods_data('fr-esr-horizon-projects-entities')
+    df_h2020_part = get_ods_data('fr-esr-h2020-projects-entities')
+    columns_part = ['project_id', 'fund_eur', 'entities_id', 'role', 'entities_name', 'participates_as', 'participation_linked']
+    df_eu_part = pd.concat([df_horizon_part, df_h2020_part])[columns_part]
     part_dict = {}
-    for e in df_horizon_part.to_dict(orient='records'):
+    for e in df_eu_part.to_dict(orient='records'):
         if str(e['project_id']) not in part_dict:
             part_dict[str(e['project_id'])] = []
         part_dict[str(e['project_id'])].append(e)
-    
+    return part_dict
+
+def get_participants(project_id, part_dict):
+    participants = []
+    if project_id not in part_dict:
+        return []
+    for part in part_dict[project_id]:
+        participation = {}
+        participation['funding'] = part['fund_eur']
+        participation['id'] = part['entities_id']
+        participation['role'] = part['role'].lower()
+        participation['label'] = {'default': part['entities_name']}
+        participation['participates_as'] = part['participates_as']
+        participants.append(participation)
+    return participants
+
+def harvest_pcri_projects():
+    df_projects = get_ods_data('fr-esr-all-projects-signed-informations')
     projects = []
+    part_dict = get_part_dict()
     for e in df_projects.to_dict(orient='records'):
         project = {}
         project['type'] = e['framework']
         project['year'] = e['call_year']
         project['id'] = str(e['project_id'])
+        project['participants'] = get_participants(project['id'], part_dict)
         if isinstance(e.get('start_date'), str):
             project['startDate'] = e['start_date']+'T00:00:00'
         if isinstance(e.get('end_date'), str):
@@ -87,6 +106,5 @@ def harvest_pcri_projects():
         if isinstance(e.get('cordis_project_webpage'), str):
             project['url'] = e['cordis_project_webpage']
         projects.append(project)
-
-
-    
+    logger.debug(f'{len(projects)} PCRI projects prepared')
+    return projects
