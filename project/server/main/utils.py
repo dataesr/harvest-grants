@@ -28,6 +28,30 @@ pays_map = {
 
 def transform_scanr(new_data):
     projects = new_data['projects']
+    for ix, p in enumerate(projects):
+        if isinstance(p.get('acronym'), str):
+            current_acronym = p['acronym']
+            projects[ix]['acronym'] = {'default': current_acronym}
+        if isinstance(p.get('name'), dict):
+            projects[ix]["label"] = p.pop("name")
+        if p.get('budget_financed'):
+            projects[ix]["budgetFinanced"] = p.pop("budget_financed")
+        if p.get('budget_total'):
+            projects[ix]["budgetTotal"] = p.pop("budget_total")
+        if ('budgetTotal' not in projects[ix]) and ('budgetFinanced' in projects[ix]):
+            projects[ix]["budgetTotal"] = projects[ix]["budgetFinanced"]
+        if "persons" in p:
+            for person in p["persons"]:
+                # Ajouter fullName
+                person["fullName"] = f"{person.get('first_name', '')} {person.get('last_name', '')}".strip()
+                # Renommer first_name en firstName
+                person["firstName"] = person.pop("first_name", "")
+                # Renommer last_name en lastName
+                person["lastName"] = person.pop("last_name", "")
+        if "action" in p and isinstance(p['action'], list):
+            for action in p["action"]:
+                action['id'] = action.pop('code', '')
+                action['label'] = {'default':  action.pop("name", "")}
     partners_map = {}
     for p in new_data['partners']:
         if p['project_id'] not in partners_map:

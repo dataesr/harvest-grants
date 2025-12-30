@@ -32,7 +32,10 @@ def get_participants(project_id, part_dict):
         return []
     for part in part_dict[project_id]:
         participation = {}
-        participation['funding'] = part['fund_eur']
+        try:
+            participation['funding'] = float(part['fund_eur'])
+        except:
+            pass
         participation['structure'] = part['entities_id']
         participation['role'] = part['role'].lower()
         participation['label'] = {'default': part['entities_name'] + '__-__' + str(part['entities_id'])}
@@ -63,7 +66,7 @@ def harvest_pcri_projects():
         if isinstance(e.get('acronym'), str):
             project['acronym'] = {'default': e['acronym']}
         if isinstance(e.get('title'), str):
-            project['title'] = {'default': e['title']}
+            project['label'] = {'default': e['title']}
         if isinstance(e.get('project_numberofparticipants'), int):
             project['participantCount'] = e['project_numberofparticipants']
         if isinstance(e.get('project_totalcost'), float):
