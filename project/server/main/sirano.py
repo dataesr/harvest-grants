@@ -2,6 +2,7 @@ import pandas as pd
 import os
 import hashlib
 import requests
+from retry import retry
 from project.server.main.participants import identify_participant, enrich_cache
 from project.server.main.utils import reset_db, upload_elt, post_data, to_int, to_float, transform_scanr
 from project.server.main.logger import get_logger
@@ -22,6 +23,7 @@ def update_sirano(args, cache_participant):
     new_data_sirano = harvest_sirano_projects(cache_participant)
     post_data(new_data_sirano)
 
+@retry(delay=20, tries=3)
 def harvest_sirano_projects(cache_participant):
     projects, partners = [], []
     df1 = pd.read_csv(URL_SIRANO, sep=';', encoding='iso-8859-1')

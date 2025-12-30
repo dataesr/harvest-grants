@@ -1,6 +1,7 @@
 import pandas as pd
 import os
 import requests
+from retry import retry
 from project.server.main.participants import identify_participant, enrich_cache
 from project.server.main.utils import reset_db, upload_elt, post_data, get_ods_data, get_all_struct, build_correspondance_structures, transform_scanr
 from project.server.main.anr import URL_ANR_PROJECTS_DGPIE
@@ -27,6 +28,7 @@ def get_pid(x, df_paysage, corresp):
     except:
         return None
 
+@retry(delay=20, tries=3)
 def harvest_pia_projects():
     df_pia_anr = pd.read_json(URL_ANR_PROJECTS_DGPIE, orient='split')
     code_decision = 'Projet.Code_Decision'

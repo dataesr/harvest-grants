@@ -52,6 +52,8 @@ def transform_scanr(new_data):
             for action in p["action"]:
                 action['id'] = action.pop('code', '')
                 action['label'] = {'default':  action.pop("name", "")}
+                break
+            p['action'] = action # not a list
     partners_map = {}
     for p in new_data['partners']:
         if p['project_id'] not in partners_map:

@@ -2,6 +2,7 @@ import pandas as pd
 import os
 import hashlib
 import requests
+from retry import retry
 from project.server.main.participants import identify_participant, enrich_cache
 from project.server.main.utils import reset_db, upload_elt, post_data, pays_map, transform_scanr
 from project.server.main.logger import get_logger
@@ -38,6 +39,7 @@ def build_desc_map(df_partners):
     return partners_desc_map
 
 
+@retry(delay=20, tries=3)
 def harvest_dim_projects(cache_participant):
     projects, partners = [], []
     df_projets_map_1 = pd.read_csv(URL_DIM_MAP_PROJETS_1, sep=';')
