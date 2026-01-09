@@ -166,7 +166,7 @@ def normalize(x):
     return y
 
 def get_all_struct():
-    df_struct = pd.read_json('https://scanr-data.s3.gra.io.cloud.ovh.net/production/organizations.jsonl.gz', lines=True)
+    df_struct = pd.read_json('https://scanr-data.s3.gra.io.cloud.ovh.net/production/organizations-v2.jsonl.gz', lines=True)
     print(f'{len(df_struct)} struct downloaded')
     return df_struct.to_dict(orient='records')
 
