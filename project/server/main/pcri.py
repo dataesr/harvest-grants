@@ -40,6 +40,13 @@ def get_participants(project_id, part_dict):
         participation['role'] = part['role'].lower()
         participation['label'] = {'default': part['entities_name'] + '__-__' + str(part['entities_id'])}
         participation['participates_as'] = part['participates_as']
+        address = {}
+        if isinstance(part.get('country_code'), str):
+            address['country_code'] = part['country_code']
+        if isinstance(part.get('country_name_fr'), str):
+            address['country'] = part['country_name_fr']
+        if address:
+            participation['address'] = address
         participants.append(participation)
     return participants
 
