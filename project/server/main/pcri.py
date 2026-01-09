@@ -17,7 +17,7 @@ def update_pcri(args, cache_participant):
 def get_part_dict():
     df_horizon_part = get_ods_data('fr-esr-horizon-projects-entities')
     df_h2020_part = get_ods_data('fr-esr-h2020-projects-entities')
-    columns_part = ['project_id', 'fund_eur', 'entities_id', 'role', 'entities_name', 'participates_as', 'participation_linked']
+    columns_part = ['project_id', 'fund_eur', 'entities_id', 'role', 'entities_name', 'participates_as', 'participation_linked', 'country_code', 'country_name_fr']
     df_eu_part = pd.concat([df_horizon_part, df_h2020_part])[columns_part]
     part_dict = {}
     for e in df_eu_part.to_dict(orient='records'):
