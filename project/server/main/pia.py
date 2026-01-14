@@ -68,6 +68,9 @@ def harvest_pia_projects():
             new_elt['action'] = [{'level': '1', 'code': e.get('action'), 'name': e.get('action')}]
         if isinstance(e.get('resumes'), str):
             new_elt['description'] = {'en': e['resumes']}
+        if isinstance(e.get('dotation'), float) and e['dotation'] == e['dotation']:
+            new_elt['budget_total'] = e['dotation']
+            new_elt['budget_financed'] = e['dotation']
         projects.append(new_elt)
     partners = []
     nb_partners_map = {}
