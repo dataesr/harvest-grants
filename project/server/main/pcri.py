@@ -17,13 +17,23 @@ def update_pcri(args, cache_participant):
 def get_part_dict():
     df_horizon_part = get_ods_data('fr-esr-horizon-projects-entities')
     df_h2020_part = get_ods_data('fr-esr-h2020-projects-entities')
-    columns_part = ['project_id', 'fund_eur', 'entities_id', 'role', 'entities_name', 'participates_as', 'participation_linked', 'country_code', 'country_name_fr']
+    columns_part = ['project_id', 'fund_eur', 'entities_id', 'role', 'entities_name', 'participates_as', 'participation_linked', 'country_code', 'country_name_fr', 'numero_national_de_structure']
     df_eu_part = pd.concat([df_horizon_part, df_h2020_part])[columns_part]
     part_dict = {}
     for e in df_eu_part.to_dict(orient='records'):
         if str(e['project_id']) not in part_dict:
             part_dict[str(e['project_id'])] = []
-        part_dict[str(e['project_id'])].append(e)
+        current_elt = {}
+        for f in ['project_id', 'fund_eur', 'entities_id', 'role', 'entities_name', 'participates_as', 'participation_linked', 'country_code', 'country_name_fr']:
+            if e.get(f):
+                current_elt[f] = e[f]
+        part_dict[str(e['project_id'])].append(current_elt)
+        if isinstance(e.get('numero_national_de_structure'), str):
+            for rnsr in e['numero_national_de_structure'].strip().split(';'):
+                new_elt = current_elt.copy()
+                new_elt['entities_id'] = rnsr
+                new_elt['entities_name'] = f'labo {rnsr} from '+current_elt.get('entities_name', '')
+                part_dict[str(e['project_id'])].append(new_elt)
     return part_dict
 
 def get_participants(project_id, part_dict):
