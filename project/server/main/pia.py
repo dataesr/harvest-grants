@@ -28,13 +28,21 @@ def get_pid(x, df_paysage, corresp):
     except:
         return None
 
+def clean_project_id(x):
+    return x.strip().replace(' ', '-').lower().replace('--', '-').replace('é', 'e').replace('è', 'e')
+
 @retry(delay=20, tries=3)
 def harvest_pia_projects():
     df_pia_anr = pd.read_json(URL_ANR_PROJECTS_DGPIE, orient='split')
     code_decision = 'Projet.Code_Decision'
-    pia_anr_code = set(df_pia_anr[code_decision].apply(lambda x:x[4:]).to_list())
+    # get code from DGPIE ANR open data, removing prefix ANR-
+    pia_anr_code = set(df_pia_anr[code_decision].apply(lambda x:clean_project_id(x[4:])).to_list())
+    logger.debug(f'{len(pia_anr_code)} PIA ANR code from DGPIE open data')
     df_pia = get_ods_data('fr-esr-piaweb')
+    df_pia['code_projet'] = df_pia['code_projet'].apply(lambda x:clean_project_id(x))
+    logger.debug(f'Total data from piaweb = {len(df_pia)} lines')
     df_pia = df_pia[df_pia['code_projet'].apply(lambda x: x not in pia_anr_code)]
+    logger.debug(f'Data from piaweb after removing known PIA ANR codes = {len(df_pia)} lines')
     # for ids
     df_paysage = get_ods_data('fr-esr-paysage_structures_identifiants')
     df_paysage = df_paysage.set_index('id_paysage')
@@ -43,10 +51,11 @@ def harvest_pia_projects():
 
     df_projects = df_pia[['code_projet', 'acronyme',  'domaine_thematique',
         'strategie_nationale', 'action', 'libelle', 'resumes', 'debut_du_projet']].drop_duplicates()
+
     projects = []
     for e in df_projects.to_dict(orient='records'):
         new_elt = {}
-        project_id = e['code_projet'].replace(' ', '_').lower().replace('é', 'e').replace('è', 'e')
+        project_id = e['code_projet']
         new_elt['id'] = project_id
         new_elt['type'] = project_type
         if isinstance(e.get('debut_du_projet'), str):
@@ -76,6 +85,7 @@ def harvest_pia_projects():
     nb_partners_map = {}
     for e in df_pia.to_dict(orient='records'):
         new_part = {}
+        project_id = e['code_projet']
         new_part['project_id'] = project_id
         if project_id not in nb_partners_map:
             nb_partners_map[project_id] = 0
