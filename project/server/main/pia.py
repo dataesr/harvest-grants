@@ -53,6 +53,15 @@ def harvest_pia_projects():
     df_projects = df_pia[['code_projet', 'acronyme',  'domaine_thematique',
         'strategie_nationale', 'action', 'libelle', 'resumes', 'debut_du_projet']].drop_duplicates()
 
+    # trouver la dotation globale et la remettre sur chaque participant
+    dotation_map = {}
+    for e in df_projects.to_dict(orient='records'):
+        project_id = e['code_projet']
+        if isinstance(e.get('dotation'), float) and e['dotation'] == e['dotation']:
+            if project_id in dotation_map:
+                logger.debug(f'already in dotation map for {e}')
+            dotation_map[project_id] = e['dotation']
+
     projects = []
     for e in df_projects.to_dict(orient='records'):
         new_elt = {}
@@ -77,10 +86,11 @@ def harvest_pia_projects():
         if isinstance(e.get('action'), str):
             new_elt['action'] = [{'level': '1', 'code': e.get('action'), 'name': e.get('action')}]
         if isinstance(e.get('resumes'), str):
-            new_elt['description'] = {'en': e['resumes']}
-        if isinstance(e.get('dotation'), float) and e['dotation'] == e['dotation']:
-            new_elt['budget_total'] = e['dotation']
-            new_elt['budget_financed'] = e['dotation']
+            new_elt['description'] = {'en': e['resumes'].replace('_x000D_', '')}
+        if project_id in dotation_map:
+            dotation = dotation_map[project_id]
+            new_elt['budget_total'] = dotation
+            new_elt['budget_financed'] = dotation
         projects.append(new_elt)
     partners = []
     nb_partners_map = {}
