@@ -1,4 +1,5 @@
 import pandas as pd
+import re
 import os
 import requests
 from retry import retry
@@ -92,22 +93,28 @@ def harvest_pia_projects():
         nb_partners_map[project_id] += 1
         new_part['project_type'] = project_type
         new_part['id'] = project_id + '-' + str(nb_partners_map[project_id]).zfill(2)
-        part_id = None
         if isinstance(e.get("etablissement"), str):
             new_part['name'] = e["etablissement"]
         new_part['role'] = 'participant'
         if isinstance(e.get('coordinateur_oui_non'), str):
             if e["coordinateur_oui_non"] == "Oui":
                 new_part['role'] = 'coordinator'
+        paysage_ids = [None]
         if isinstance(e.get('id_paysage'), str):
-            paysage_id = e['id_paysage'].split(',')[0]
-            part_id = get_pid(paysage_id, df_paysage, corresp)
-        if part_id:
-            new_part['participant_id'] = part_id
-            new_part['organizations_id'] = part_id
-            new_part['identified'] = True
-        else:
-            new_part['identified'] = False
-        partners.append(new_part)
+            paysage_ids = re.split(r"[;,]", e['id_paysage'])
+            if len(paysage_ids)==0:
+                paysage_ids = [None]
+        for paysage_id in paysage_ids:
+            new_part_to_add = new_part.copy()
+            part_id = paysage_id #get_pid(paysage_id, df_paysage, corresp)
+            if part_id:
+                part_id = part_id.strip()
+                new_part_to_add['participant_id'] = part_id
+                new_part_to_add['organizations_id'] = part_id
+                new_part_to_add['identified'] = True
+            else:
+                new_part_to_add['identified'] = False
+            if new_part_to_add not in partners:
+                partners.append(new_part_to_add)
     return {'projects': projects, 'partners': partners}
     
