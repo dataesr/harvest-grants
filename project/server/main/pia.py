@@ -63,9 +63,12 @@ def harvest_pia_projects():
             dotation_map[project_id] = e['dotation']
 
     projects = []
+    known_ids = []
     for e in df_projects.to_dict(orient='records'):
         new_elt = {}
         project_id = e['code_projet']
+        if project_id in known_ids:
+            continue
         new_elt['id'] = project_id
         new_elt['type'] = project_type
         if isinstance(e.get('debut_du_projet'), str):
@@ -92,6 +95,8 @@ def harvest_pia_projects():
             new_elt['budget_total'] = dotation
             new_elt['budget_financed'] = dotation
         projects.append(new_elt)
+        known_ids.append(project_id)
+    
     partners = []
     nb_partners_map = {}
     for e in df_pia.to_dict(orient='records'):
