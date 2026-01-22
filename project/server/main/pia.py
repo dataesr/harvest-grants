@@ -45,14 +45,12 @@ def harvest_pia_projects():
     df_pia = df_pia[df_pia['code_projet'].apply(lambda x: x not in pia_anr_code)]
     logger.debug(f'Data from piaweb after removing known PIA ANR codes = {len(df_pia)} lines')
     # for ids
-    df_paysage = get_ods_data('fr-esr-paysage_structures_identifiants')
-    df_paysage = df_paysage.set_index('id_paysage')
-    all_struct = get_all_struct()
-    corresp = build_correspondance_structures(all_struct)
-
-    df_projects = df_pia[['code_projet', 'acronyme',  'domaine_thematique',
+    #df_paysage = get_ods_data('fr-esr-paysage_structures_identifiants')
+    #df_paysage = df_paysage.set_index('id_paysage')
+    #all_struct = get_all_struct()
+    #corresp = build_correspondance_structures(all_struct)
+    df_projects = df_pia[['code_projet', 'acronyme',  'domaine_thematique', 'dotation',
         'strategie_nationale', 'action', 'libelle', 'resumes', 'debut_du_projet']].drop_duplicates()
-
     # trouver la dotation globale et la remettre sur chaque participant
     dotation_map = {}
     for e in df_projects.to_dict(orient='records'):
@@ -61,7 +59,6 @@ def harvest_pia_projects():
             if project_id in dotation_map:
                 logger.debug(f'already in dotation map for {e}')
             dotation_map[project_id] = e['dotation']
-
     projects = []
     known_ids = []
     for e in df_projects.to_dict(orient='records'):
