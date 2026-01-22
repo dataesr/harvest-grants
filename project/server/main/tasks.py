@@ -26,6 +26,7 @@ def test():
 def create_task_update_v2(arg):
     cache_participant = enrich_cache()
     os.system('rm -rf projects.jsonl')
+    os.system('rm -rf projects.jsonl.gz')
     if arg.get('pcri') or arg.get('all'):
         update_pcri(arg, cache_participant)
     if arg.get('anr') or arg.get('all'):
