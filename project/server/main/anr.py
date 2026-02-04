@@ -6,6 +6,7 @@ from project.server.main.participants import identify_participant, enrich_cache
 from project.server.main.utils import reset_db, upload_elt, post_data, reset_db_projects_and_partners, transform_scanr
 from project.server.main.logger import get_logger
 
+URL_AAPG_ANR = 'https://data.anr.fr/api/explore/v2.1/catalog/datasets/comites_aapg0/exports/csv?lang=fr&timezone=Europe%2FBerlin&use_labels=true&delimiter=%3B'
 URL_ANR_PROJECTS_05_09 = 'https://www.data.gouv.fr/api/1/datasets/r/a16e0fd7-a008-499b-bbd3-b640f8651bd9'
 URL_ANR_PARTNERS_05_09 = 'https://www.data.gouv.fr/api/1/datasets/r/18e345ee-7a16-4727-8ac5-b237db974e24'
 URL_ANR_PROJECTS_10 = 'https://www.data.gouv.fr/api/1/datasets/r/afe3d11b-9ea2-48b0-9789-2816d5785466'
@@ -58,6 +59,7 @@ def get_person_map(df_partners):
 
 @retry(delay=20, tries=3)
 def harvest_anr_projects(project_type, cache_participant):
+    enrichment_dict = {}
     if project_type=='ANR':
         df_projects1 = pd.read_json(URL_ANR_PROJECTS_05_09, orient='split')
         df_projects1.rename(columns={"Projet.Code_Decision_ANR": "Projet.Code_Decision"}, inplace=True)
@@ -68,6 +70,11 @@ def harvest_anr_projects(project_type, cache_participant):
         df_partners1.rename(columns={"Projet.Partenaire.Code_Decision_ANR": "Projet.Partenaire.Code_Decision"}, inplace=True)
         df_partners2 = pd.read_json(URL_ANR_PARTNERS_10, orient='split')
         df_partners = pd.concat([df_partners1, df_partners2])
+        # enrichment with data from ANR portal
+        df_aapg = pd.read_csv(URL_AAPG_ANR, sep=';')
+        for k in df_aapg.to_dict(orient='records'):
+            current_id = k['Code projet ANR']
+            enrichment_dict[current_id] = k
     elif project_type == 'PIA ANR':
         df_projects = pd.read_json(URL_ANR_PROJECTS_DGPIE, orient='split')
         df_partners = pd.read_json(URL_ANR_PARTNERS_DGPIE, orient='split')
@@ -77,6 +84,11 @@ def harvest_anr_projects(project_type, cache_participant):
         new_elt = {}
         code_decision = e['Projet.Code_Decision']
         new_elt['id'] = code_decision
+        if code_decision in enrichment_dict:
+            if 'Instrument financement' in enrichment_dict[code_decision]:
+                new_elt['instrument'] = enrichment_dict[code_decision]['Instrument financement']
+            if 'Intitulé du comité' in enrichment_dict[code_decision]:
+                new_elt['comite'] = enrichment_dict[code_decision]['Intitulé du comité']
         new_elt['type'] = project_type
         new_elt['name'] = {}
         if isinstance(e.get('Projet.Titre.Francais'), str):

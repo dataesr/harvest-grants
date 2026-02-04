@@ -100,6 +100,9 @@ def harvest_pcri_projects():
                 },
                 "level": "1"
               }
+            project['instrument'] = e['action_name']
+        if isinstance(e.get('pilier_global_name'), str):
+            project['pilier_global_name'] = e['pilier_global_name']
         if isinstance(e.get('call_id'), str):
             project['call'] = {'id':e['call_id']}
         priorities = []
