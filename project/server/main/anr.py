@@ -145,6 +145,9 @@ def harvest_anr_projects(project_type, cache_participant):
             new_elt['role'] = 'coordinator'
         else:
             new_elt['role'] = 'participant'
+        if isinstance(e.get('Projet.Partenaire.Aide_allouee.ANR'), float):
+            if e.get('Projet.Partenaire.Aide_allouee.ANR') == e.get('Projet.Partenaire.Aide_allouee.ANR'):
+                new_elt['funding'] = e.get('Projet.Partenaire.Aide_allouee.ANR')
         address = {}
         if isinstance(e['Projet.Partenaire.Adresse.Ville'], str):
             address['city'] = e['Projet.Partenaire.Adresse.Ville']

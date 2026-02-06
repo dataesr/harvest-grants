@@ -85,6 +85,7 @@ def harvest_pia_projects():
             new_elt['name'] = {'en': acronym}
         if isinstance(e.get('action'), str):
             new_elt['action'] = [{'level': '1', 'code': e.get('action'), 'name': e.get('action')}]
+            new_elt['instrument'] = e['action']
         if isinstance(e.get('resumes'), str):
             new_elt['description'] = {'en': e['resumes'].replace('_x000D_', '')}
         if project_id in dotation_map:
@@ -111,6 +112,8 @@ def harvest_pia_projects():
         if isinstance(e.get('coordinateur_oui_non'), str):
             if e["coordinateur_oui_non"] == "Oui":
                 new_part['role'] = 'coordinator'
+        if isinstance(e.get('consommations'), float) and e['consommations'] == e['consommations']:
+            new_part['funding'] = e['consommations']
         paysage_ids = [None]
         if isinstance(e.get('id_paysage'), str):
             paysage_ids = re.split(r"[;,]", e['id_paysage'])
