@@ -5,7 +5,7 @@ import requests
 from retry import retry
 from project.server.main.participants import identify_participant, enrich_cache
 from project.server.main.utils import reset_db, upload_elt, post_data, get_ods_data, get_all_struct, build_correspondance_structures, transform_scanr
-from project.server.main.anr import URL_ANR_PROJECTS_DGPIE
+from project.server.main.anr import URL_ANR_PROJECTS_DGPIE, harvest_anr_projects
 from project.server.main.logger import get_logger
 
 logger = get_logger(__name__)
@@ -34,16 +34,13 @@ def clean_project_id(x):
 
 @retry(delay=20, tries=3)
 def harvest_pia_projects():
-    df_pia_anr = pd.read_json(URL_ANR_PROJECTS_DGPIE, orient='split')
-    code_decision = 'Projet.Code_Decision'
-    # get code from DGPIE ANR open data, removing prefix ANR-
-    pia_anr_code = set(df_pia_anr[code_decision].apply(lambda x:clean_project_id(x[4:])).to_list())
-    logger.debug(f'{len(pia_anr_code)} PIA ANR code from DGPIE open data')
+    new_data_pia = harvest_anr_projects('PIA ANR', cache_participant)
+    anr_info_dict = {}
+    for p in new_data_pia['projects']:
+        anr_info_dict[clean_project_id(p['id'][4:])] = p
     df_pia = get_ods_data('fr-esr-piaweb')
     df_pia['code_projet'] = df_pia['code_projet'].apply(lambda x:clean_project_id(x))
     logger.debug(f'Total data from piaweb = {len(df_pia)} lines')
-    df_pia = df_pia[df_pia['code_projet'].apply(lambda x: x not in pia_anr_code)]
-    logger.debug(f'Data from piaweb after removing known PIA ANR codes = {len(df_pia)} lines')
     # for ids
     #df_paysage = get_ods_data('fr-esr-paysage_structures_identifiants')
     #df_paysage = df_paysage.set_index('id_paysage')
@@ -92,6 +89,9 @@ def harvest_pia_projects():
             dotation = dotation_map[project_id]
             new_elt['budget_total'] = dotation
             new_elt['budget_financed'] = dotation
+        if project_id in anr_info_dict:
+            current_anr_info = anr_info_dict['project_id']
+            new_elt.update(current_anr_info)
         projects.append(new_elt)
         known_ids.append(project_id)
     

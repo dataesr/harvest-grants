@@ -32,6 +32,7 @@ def get_part_dict():
             for rnsr in e['numero_national_de_structure'].strip().split(';'):
                 new_elt = current_elt.copy()
                 new_elt['entities_id'] = rnsr
+                new_elt['is_rnsr'] = True
                 new_elt['entities_name'] = f'labo {rnsr} from '+current_elt.get('entities_name', '')
                 part_dict[str(e['project_id'])].append(new_elt)
     return part_dict

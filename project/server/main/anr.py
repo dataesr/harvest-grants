@@ -20,8 +20,9 @@ def update_anr_v2(args, cache_participant):
     new_data_anr = harvest_anr_projects('ANR', cache_participant)
     transform_scanr(new_data_anr)
 
-    new_data_pia = harvest_anr_projects('PIA ANR', cache_participant)
-    transform_scanr(new_data_pia)
+    # PIA data from piaweb instead
+    #new_data_pia = harvest_anr_projects('PIA ANR', cache_participant)
+    #transform_scanr(new_data_pia)
 
 
 def update_anr_dos(args, cache_participant):
@@ -148,6 +149,7 @@ def harvest_anr_projects(project_type, cache_participant):
         if isinstance(e.get('Projet.Partenaire.Aide_allouee.ANR'), float):
             if e.get('Projet.Partenaire.Aide_allouee.ANR') == e.get('Projet.Partenaire.Aide_allouee.ANR'):
                 new_elt['funding'] = e.get('Projet.Partenaire.Aide_allouee.ANR')
+                new_elt['funding_split_by_supervisors']=True
         address = {}
         if isinstance(e['Projet.Partenaire.Adresse.Ville'], str):
             address['city'] = e['Projet.Partenaire.Adresse.Ville']
