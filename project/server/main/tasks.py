@@ -46,7 +46,7 @@ def create_task_update_v2(arg):
     if arg.get('inov') or arg.get('all'):
         update_inov_v2(arg, cache_participant)
     if arg.get('pia') or arg.get('all'):
-        update_pia_v2(arg)
+        update_pia_v2(arg, cache_participant)
     os.system(f'gzip projects.jsonl')
     upload_object(container='scanr-data', source = f'projects.jsonl.gz', destination=f'production/projects-v2.jsonl.gz')
 

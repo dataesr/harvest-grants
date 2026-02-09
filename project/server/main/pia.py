@@ -10,15 +10,15 @@ from project.server.main.logger import get_logger
 
 logger = get_logger(__name__)
 
-def update_pia_v2(args):
-    new_data = harvest_pia_projects()
+def update_pia_v2(args, cache_participant):
+    new_data = harvest_pia_projects(cache_participant)
     transform_scanr(new_data)
 
 project_type = 'PIA hors ANR'
-def update_pia(args):
+def update_pia(args, cache_participant):
     reset_db(project_type, 'projects')
     reset_db(project_type, 'participations')
-    new_data_pia = harvest_pia_projects()
+    new_data_pia = harvest_pia_projects(cache_participant)
     post_data(new_data_pia)
 
 def get_pid(x, df_paysage, corresp):
@@ -33,7 +33,7 @@ def clean_project_id(x):
     return x.strip().replace(' ', '-').lower().replace('--', '-').replace('é', 'e').replace('è', 'e')
 
 @retry(delay=20, tries=3)
-def harvest_pia_projects():
+def harvest_pia_projects(cache_participant):
     new_data_pia = harvest_anr_projects('PIA ANR', cache_participant)
     anr_info_dict = {}
     for p in new_data_pia['projects']:
@@ -89,6 +89,7 @@ def harvest_pia_projects():
             dotation = dotation_map[project_id]
             new_elt['budget_total'] = dotation
             new_elt['budget_financed'] = dotation
+        # if project in DGPIE, override with data from ANR DGPIE dataset
         if project_id in anr_info_dict:
             current_anr_info = anr_info_dict['project_id']
             new_elt.update(current_anr_info)
@@ -105,6 +106,8 @@ def harvest_pia_projects():
             nb_partners_map[project_id] = 0
         nb_partners_map[project_id] += 1
         new_part['project_type'] = project_type
+        if project_id in anr_info_dict:
+            new_part['project_type'] = 'PIA ANR'
         new_part['id'] = project_id + '-' + str(nb_partners_map[project_id]).zfill(2)
         if isinstance(e.get("etablissement"), str):
             new_part['name'] = e["etablissement"]
