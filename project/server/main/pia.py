@@ -30,7 +30,7 @@ def get_pid(x, df_paysage, corresp):
         return None
 
 def clean_project_id(x):
-    return x.strip().replace(' ', '-').lower().replace('--', '-').replace('é', 'e').replace('è', 'e')
+    return x.strip().replace(' ', '-').upper().replace('--', '-').replace('é', 'e').replace('è', 'e')
 
 @retry(delay=20, tries=3)
 def harvest_pia_projects(cache_participant):
@@ -91,7 +91,7 @@ def harvest_pia_projects(cache_participant):
             new_elt['budget_financed'] = dotation
         # if project in DGPIE, override with data from ANR DGPIE dataset
         if project_id in anr_info_dict:
-            current_anr_info = anr_info_dict['project_id']
+            current_anr_info = anr_info_dict[project_id] # overrides also project_id with ANR-...
             new_elt.update(current_anr_info)
         projects.append(new_elt)
         known_ids.append(project_id)
@@ -100,14 +100,15 @@ def harvest_pia_projects(cache_participant):
     nb_partners_map = {}
     for e in df_pia.to_dict(orient='records'):
         new_part = {}
-        project_id = e['code_projet']
+        code_projet = e['code_projet']
+        if code_projet in anr_info_dict:
+            new_part['project_type'] = 'PIA ANR'
+            project_id = f'ANR-{code_projet}'
         new_part['project_id'] = project_id
         if project_id not in nb_partners_map:
             nb_partners_map[project_id] = 0
         nb_partners_map[project_id] += 1
         new_part['project_type'] = project_type
-        if project_id in anr_info_dict:
-            new_part['project_type'] = 'PIA ANR'
         new_part['id'] = project_id + '-' + str(nb_partners_map[project_id]).zfill(2)
         if isinstance(e.get("etablissement"), str):
             new_part['name'] = e["etablissement"]

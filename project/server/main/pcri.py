@@ -88,9 +88,9 @@ def harvest_pcri_projects():
         if isinstance(e.get('project_numberofparticipants'), int):
             project['participantCount'] = e['project_numberofparticipants']
         if isinstance(e.get('project_totalcost'), float):
-            project['budgetTotal'] = e['project_totalcost']
+            project['budget_total'] = e['project_totalcost']
         if isinstance(e.get('project_eucontribution'), float):
-            project['budgetFinanced'] = e['project_eucontribution']
+            project['budget_financed'] = e['project_eucontribution']
         if isinstance(e.get('free_keywords'), str):
             project['keywords'] = {'en': e['free_keywords'].split('|')}
         if e.get('action_code'):
