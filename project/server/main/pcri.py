@@ -27,6 +27,7 @@ def get_part_dict():
         for f in ['project_id', 'fund_eur', 'entities_id', 'role', 'entities_name', 'participates_as', 'participation_linked', 'country_code', 'country_name_fr']:
             if e.get(f):
                 current_elt[f] = e[f]
+        current_elt['id'] = str(e['project_id']) + '-' + str(len(part_dict[str(e['project_id'])]) + 1).zfill(2)
         part_dict[str(e['project_id'])].append(current_elt)
         if isinstance(e.get('numero_national_de_structure'), str):
             for rnsr in e['numero_national_de_structure'].strip().split(';'):
@@ -41,12 +42,13 @@ def get_participants(project_id, part_dict):
     participants = []
     if project_id not in part_dict:
         return []
-    for part in part_dict[project_id]:
+    for part_idx, part in enumerate(part_dict[project_id]):
         participation = {}
         try:
             participation['funding'] = float(part['fund_eur'])
         except:
             pass
+        participation['id'] = part['id']
         participation['structure'] = part['entities_id']
         participation['role'] = part['role'].lower()
         participation['label'] = {'default': part['entities_name'] + '__-__' + str(part['entities_id'])}
@@ -88,9 +90,9 @@ def harvest_pcri_projects():
         if isinstance(e.get('project_numberofparticipants'), int):
             project['participantCount'] = e['project_numberofparticipants']
         if isinstance(e.get('project_totalcost'), float):
-            project['budget_total'] = e['project_totalcost']
+            project['budgetTotal'] = e['project_totalcost']
         if isinstance(e.get('project_eucontribution'), float):
-            project['budget_financed'] = e['project_eucontribution']
+            project['budgetFinanced'] = e['project_eucontribution']
         if isinstance(e.get('free_keywords'), str):
             project['keywords'] = {'en': e['free_keywords'].split('|')}
         if e.get('action_code'):

@@ -59,8 +59,10 @@ def transform_scanr(new_data):
         if p['project_id'] not in partners_map:
             partners_map[p['project_id']] = []
         new_elem = {}
-        if 'role' in p:
-            new_elem['role'] = p['role']
+        for f in ['role', 'funding']:
+            if f in p:
+                new_elem[f] = p[f]
+        new_elem['participation_id'] = p['id']
         if 'participant_id' in p:
             new_elem['structure'] = p['participant_id']
         if 'name' in p:
