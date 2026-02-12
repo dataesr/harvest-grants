@@ -62,7 +62,7 @@ def transform_scanr(new_data):
         for f in ['role', 'funding']:
             if f in p:
                 new_elem[f] = p[f]
-        new_elem['participation_id'] = p['id']
+        new_elem['id'] = p['id']
         if 'participant_id' in p:
             new_elem['structure'] = p['participant_id']
         if 'name' in p:

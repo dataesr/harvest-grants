@@ -64,6 +64,9 @@ def harvest_pia_projects(cache_participant):
         if project_id in known_ids:
             continue
         new_elt['id'] = project_id
+        project_type = 'PIA hors ANR'
+        if project_id in anr_info_dict:
+            project_type = 'PIA ANR'
         new_elt['type'] = project_type
         if isinstance(e.get('debut_du_projet'), str):
             try:
@@ -102,13 +105,16 @@ def harvest_pia_projects(cache_participant):
         new_part = {}
         code_projet = e['code_projet']
         if code_projet in anr_info_dict:
-            new_part['project_type'] = 'PIA ANR'
+            project_type = 'PIA ANR'
             project_id = f'ANR-{code_projet}'
+        else:
+            project_type = 'PIA hors ANR'
+            project_id = code_projet
         new_part['project_id'] = project_id
+        new_part['project_type'] = project_type
         if project_id not in nb_partners_map:
             nb_partners_map[project_id] = 0
         nb_partners_map[project_id] += 1
-        new_part['project_type'] = project_type
         new_part['id'] = project_id + '-' + str(nb_partners_map[project_id]).zfill(2)
         if isinstance(e.get("etablissement"), str):
             new_part['name'] = e["etablissement"]
