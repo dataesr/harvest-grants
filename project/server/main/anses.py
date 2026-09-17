@@ -7,7 +7,8 @@ from project.server.main.utils import reset_db, upload_elt, post_data, reset_db_
 from project.server.main.logger import get_logger
 
 URL_ANSES_PROJECTS = 'https://www.data.gouv.fr/api/1/datasets/r/ea1a1cc1-911f-4b0d-84ba-3d6447c255d7'
-URL_ANSES_PARTNERS= 'https://www.data.gouv.fr/api/1/datasets/r/0c4252ad-b1dc-4e1d-84da-fd8afc4094fb'
+#URL_ANSES_PARTNERS= 'https://www.data.gouv.fr/api/1/datasets/r/0c4252ad-b1dc-4e1d-84da-fd8afc4094fb'
+URL_ANSES_PARTNERS= 'https://www.data.gouv.fr/api/1/datasets/r/e46c7e03-332d-4cc5-a7c6-57afc328f4e2'
 
 logger = get_logger(__name__)
 
@@ -24,38 +25,45 @@ def update_anses(args, cache_participant):
 def get_person_map(df_partners):
     person_map = {}
     for e in df_partners.to_dict(orient='records'):
-        code_decision = e['code convention homogénéisé']
+        code_decision = e['Projet.Code']
         if code_decision not in person_map:
             person_map[code_decision] = []
 
-        suffixes = ['']
-        for k in range(1, 14):
-            suffixes.append(f'.{k}')
-        for suf in suffixes:
-            person = {}
-            name_field = f'Nom Responsable Scientifique{suf}'
-            firstname_field = f'Prénom Responsable Scientifique{suf}'
-            if isinstance(e[name_field], str):
-                person['last_name'] = e[name_field]
-            if isinstance(e[firstname_field], str):
-                person['first_name'] = e[firstname_field]
-            if person and suf=='':
-                person['role'] = 'coordinator'
-            elif person:
-                person['role'] = 'participant'
-            if person and person not in person_map[code_decision]:
-                person_map[code_decision].append(person)
+        person = {}
+        name_field = f'Projet.Responsable.Nom'
+        firstname_field = df_partners.columns[4]
+        if isinstance(e[name_field], str):
+            person['last_name'] = e[name_field]
+        if isinstance(e[firstname_field], str):
+            person['first_name'] = e[firstname_field]
+        if person and e['Projet.Partenaire.numero'] == "1":
+            person['role'] = 'coordinator'
+        elif person:
+            person['role'] = 'participant'
+        if person and person not in person_map[code_decision]:
+            person_map[code_decision].append(person)
     return person_map
 
 @retry(delay=20, tries=3)
 def harvest_anses_projects(cache_participant):
-    df_projects = pd.read_csv(URL_ANSES_PROJECTS, sep=';', encoding='iso-8859-1')
-    df_partners = pd.read_csv(URL_ANSES_PARTNERS, sep=';', encoding='iso-8859-1', skiprows=1)
+    df_projects = pd.read_csv(URL_ANSES_PROJECTS, sep=';', encoding='cp850')
+    df_projects = df_projects.loc[:, ~df_projects.columns.str.startswith("Unnamed")]
+    df_projects = df_projects.apply(lambda s: s.str.strip('"').replace("", pd.NA))
+
+
+    #df_partners = pd.read_csv(URL_ANSES_PARTNERS, sep=';', encoding='iso-8859-1', skiprows=1)
+    df_partners = pd.read_csv(URL_ANSES_PARTNERS, sep=';', encoding="cp850", dtype=str)
+    # supprimer les colonnes vides dues aux ";;" finaux
+    df_partners = df_partners.loc[:, ~df_partners.columns.str.startswith("Unnamed")]
+    # retirer les guillemets résiduels et transformer les vides en NaN
+    df_partners = df_partners.apply(lambda s: s.str.strip('"').replace("", pd.NA))
 
     person_map = get_person_map(df_partners)
     projects, partners = [], []
     for e in df_projects.to_dict(orient='records'):
         new_elt = {}
+        if not isinstance(e['Projet.Code'], str):
+            continue
         code_decision = e['Projet.Code'].replace('"', '')
         new_elt['id'] = code_decision
         new_elt['type'] = project_type
@@ -84,8 +92,8 @@ def harvest_anses_projects(cache_participant):
             new_elt['year'] = year
         except:
             pass
-        if e.get('Projet.Montant_Aide'):
-            montant = e.get('Projet.Montant_Aide').replace('\x80', '').replace(' ', '')
+        if isinstance(e.get('Projet.Montant_Aide'), str):
+            montant = e.get('Projet.Montant_Aide').replace('\x80', '').replace('?', '').replace(' ', '')
             new_elt['budget_financed'] = float(montant)
         if code_decision in person_map:
             new_elt['persons'] = person_map[code_decision]
@@ -93,38 +101,33 @@ def harvest_anses_projects(cache_participant):
     
     for e in df_partners.to_dict(orient='records'):
         new_elt = {}
-        code_decision = e['code convention homogénéisé']
-        suffixes = ['']
-        for k in range(1, 14):
-            suffixes.append(f'.{k}')
-        for sx, suf in enumerate(suffixes):
-            organism_key = f'Organisme{suf}'
-            if isinstance(e.get(organism_key), str):
-                code_decision_partenaire = code_decision+'-'+str(sx).zfill(2)
-                new_elt['id'] = code_decision_partenaire
-                new_elt['project_id'] = code_decision
-                new_elt['project_type'] = project_type
-                part_id = None
-                if isinstance(e.get(organism_key), str):
-                    new_elt['name'] = e[organism_key]
-                    part_id = identify_participant(new_elt['name'], cache_participant)
-                    if part_id:
-                        new_elt['participant_id'] = part_id
-                        new_elt['organizations_id'] = part_id
-                        new_elt['identified'] = True
-                    else:
-                        new_elt['identified'] = False
-                    if suf=='':
-                        new_elt['role'] = 'coordinator'
-                    else:
-                        new_elt['role'] = 'participant'
-                address = {}
-                if isinstance(e.get(f'Ville{suf}'), str):
-                    address['city'] = e.get(f'Ville{suf}')
-                if isinstance(e.get(f'Pays{suf}'), str):
-                    address['country'] = e.get(f'Pays{suf}')
-                if address:
-                    new_elt['address'] = address
-                if new_elt not in partners:
-                    partners.append(new_elt)
+        #code_decision = e['code convention homogénéisé']
+        code_decision = e['Projet.Code']
+        sx = e['Projet.Partenaire.numero']
+        code_decision_partenaire = code_decision+'-'+str(sx).zfill(2)
+        new_elt['id'] = code_decision_partenaire
+        new_elt['project_id'] = code_decision
+        new_elt['project_type'] = project_type
+        part_id = None
+        new_elt['name'] = e['Projet.Partenaire.Organisme']
+        part_id = identify_participant(new_elt['name'], cache_participant)
+        if part_id:
+            new_elt['participant_id'] = part_id
+            new_elt['organizations_id'] = part_id
+            new_elt['identified'] = True
+        else:
+            new_elt['identified'] = False
+        if sx == "1" :
+            new_elt['role'] = 'coordinator'
+        else:
+            new_elt['role'] = 'participant'
+        address = {}
+        if isinstance(e.get(f'Projet.Partenaire.Ville'), str):
+            address['city'] = e.get('Projet.Partenaire.Ville')
+        if isinstance(e.get(f'Projet.Partenaire.Pays'), str):
+            address['country'] = e.get(f'Projet.Partenaire.Pays')
+        if address:
+            new_elt['address'] = address
+        if new_elt not in partners:
+            partners.append(new_elt)
     return {'projects': projects, 'partners': partners}
