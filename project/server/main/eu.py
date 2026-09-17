@@ -155,7 +155,8 @@ def extract_projects(data: list, cache_participant: dict) -> list:
 
         project["id"] = project_id
         project["url"] = metadata["url"][0]
-        project["type"] = metadata["programAbbreviation"][0]  # TODO mapping ?
+        #project["type"] = metadata["programAbbreviation"][0]  # TODO mapping ?
+        project["type"] = 'Autres financements européens'
 
         project["startDate"] = metadata["startDate"][0]
         project["endDate"] = metadata["endDate"][0]
@@ -179,18 +180,31 @@ def extract_projects(data: list, cache_participant: dict) -> list:
 
         action_code = metadata["typeOfActions"][0]
         action_label = metadata["typeOfAction"][0]
+        program = metadata['programmes'][0]
+        program_id = metadata['programId'][0]
+        program_acronym = metadata['programAbbreviation'][0]
         project["instrument"] = action_label
         project["action"] = {
-            "code": action_code,
-            "label": {"default": action_label},
-            # "level": 1
+            "code": program_id,
+            "label": {"default": program},
+            "level": 1
         }
 
         if len(metadata.get("freeKeywords", [])):
             project["keywords"] = {"en": metadata["freeKeywords"]}
 
-        # TODO:
-        # priorities ?
+        priorities = []
+        if isinstance(metadata.get('topicAbbreviation'), list):
+            for topic in metadata.get('topicAbbreviation'):
+                new_prio = {
+                      "type": "topic",
+                    "label": {
+                            "default": topic
+                        }
+                    }
+                if new_prio not in priorities:
+                    priorities.append(new_prio)
+        project['priorities'] = priorities
 
         projects.append(project)
 
