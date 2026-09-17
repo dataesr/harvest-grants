@@ -58,7 +58,7 @@ eu_params = {"apiKey": "SEDIA_NONH2020_PROD", "text": "***", "pageSize": 1, "pag
 
 @retry(delay=20, tries=3)
 def fetch_one_page(page_number: int, page_size: int) -> list:
-    params = {**eu_params, "pageSize": page_number, "pageNumber": page_size}
+    params = {**eu_params, "pageSize": page_size, "pageNumber": page_number}
     response = requests.post(
         url=eu_url,
         headers=eu_headers,
@@ -129,6 +129,7 @@ def extract_participants(project_id: str, raw_text: str, cache_participant: dict
 
 def extract_projects(data: list, cache_participant: dict) -> list:
     projects = []
+    project_ids = set()
 
     if not len(data):
         logger.warning("No data to extract")
@@ -146,6 +147,11 @@ def extract_projects(data: list, cache_participant: dict) -> list:
 
         metadata = d["metadata"]
         project_id = metadata["projectId"][0]
+
+        if project_id in project_ids:
+            logger.debug(f"Skipping duplicate EU project {project_id}")
+            continue
+        project_ids.add(project_id)
 
         project["id"] = project_id
         project["url"] = metadata["url"][0]
