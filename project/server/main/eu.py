@@ -57,7 +57,7 @@ eu_params = {"apiKey": "SEDIA_NONH2020_PROD", "text": "***", "pageSize": 1, "pag
 
 
 @retry(delay=20, tries=3)
-def fetch_one_page(page_number: int, page_size: int) -> list:
+def fetch_one_page(page_number: int, page_size: int) -> dict:
     params = {**eu_params, "pageSize": page_size, "pageNumber": page_number}
     response = requests.post(
         url=eu_url,
@@ -69,7 +69,7 @@ def fetch_one_page(page_number: int, page_size: int) -> list:
     return data
 
 
-def fetch_all(page_size: int = 50):
+def fetch_all(page_size: int = 50) -> list:
     next_page = 1
     results = []
     logger.info("Start fetching EU API...")
