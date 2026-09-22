@@ -1,6 +1,7 @@
 import json
 import requests
 from retry import retry
+import pandas as pd
 from project.server.main.participants import identify_participant
 from project.server.main.utils import to_jsonl
 from project.server.main.logger import get_logger
@@ -112,7 +113,7 @@ def fetch_all(case: str, page_size: int = 50) -> list:
     return results
 
 
-def extract_participants(project_id: str, raw_text: str, cache_participant: dict) -> list:
+def extract_participants(project_id: str, raw_text: str, cache_participant: dict, pic_map) -> list:
     participants = []
 
     if not len(raw_text):
@@ -128,6 +129,12 @@ def extract_participants(project_id: str, raw_text: str, cache_participant: dict
     for index, d in enumerate(data):
         participant = {}
         participant["role"] = d["role"]
+        participant["pic"] = d["pic"]
+        if d['pic'] in pic_map:
+            part_id = pic_map[d['pic']]
+            participant['participant_id'] = part_id
+            participant['organizations_id'] = part_id
+            participant['identified'] = True
         participant["funding"] = d["eucontribution"]
         participant["id"] = f"{project_id}-{index+1:02d}"
         participant["label"] = {"default": d["legalName"]}
@@ -253,7 +260,7 @@ def extract_projects(data: list, cache_participant: dict) -> list:
     return projects
 
 
-def harvest_eu_projects(cache_participant: dict) -> list:
+def harvest_eu_projects(cache_participant: dict, pic_map) -> list:
     # Il Faut découper car il y a plus de 10000 projets à récupérer
     results = []
     for c in MAPPING:
@@ -261,7 +268,7 @@ def harvest_eu_projects(cache_participant: dict) -> list:
             continue
         results += fetch_all(c)
     results += fetch_all('rest')
-    projects = extract_projects(results, cache_participant)
+    projects = extract_projects(results, cache_participant, pic_map)
 
     if len(projects):
         logger.debug("projects sample:")
@@ -271,5 +278,18 @@ def harvest_eu_projects(cache_participant: dict) -> list:
 
 
 def update_eu(args, cache_participant: dict):
-    new_data_eu = harvest_eu_projects(cache_participant)
+    pic_map = get_pic_correspondance()
+    new_data_eu = harvest_eu_projects(cache_participant, pic_map)
     to_jsonl(new_data_eu, "projects.jsonl")
+
+def get_pic_correspondance():
+    GRIST_TOKEN = os.getenv('GRIST_TOKEN')
+    URL = "https://grist.numerique.gouv.fr/api/docs/s8u4VDyE9RoTp38S22gQE8/download/xlsx"
+    HEADERS = {"Authorization": f"Bearer {GRIST_TOKEN}"}
+    df = pd.read_excel(URL, storage_options=HEADERS, sheet_name='from_pic_to_id')
+    pic_map = {}
+    for e in df.to_dict(orient='records'):
+        if isinstance(e['generalPic'], str) and isinstance(e['from_id_to_ref'], str):
+            pic_map[e['generalPic']] = e['from_id_to_ref'].strip()
+    return pic_map
+
