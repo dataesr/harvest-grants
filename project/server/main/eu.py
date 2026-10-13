@@ -2,7 +2,6 @@ import json
 import requests
 import os
 from retry import retry
-import pandas as pd
 from project.server.main.participants import identify_participant
 from project.server.main.utils import to_jsonl
 from project.server.main.logger import get_logger
@@ -130,20 +129,17 @@ def extract_participants(project_id: str, raw_text: str, cache_participant: dict
     for index, d in enumerate(data):
         participant = {}
         participant["role"] = d["role"]
-        participant["pic"] = d["pic"]
-        if d['pic'] in pic_map:
-            part_id = pic_map[d['pic']]
-            participant['participant_id'] = part_id
-            participant['organizations_id'] = part_id
-            participant['identified'] = True
+        participant["pic"] = str(d["pic"])
         participant["funding"] = d["eucontribution"]
         participant["id"] = f"{project_id}-{index+1:02d}"
         participant["label"] = {"default": d["legalName"]}
 
         participant_id = identify_participant(d["legalName"], cache_participant)
         if participant_id:
-            participant["participant_id"] = participant_id
-        # TODO: identify other participants
+            participant["structure"] = participant_id
+        if participant["pic"] in pic_map:
+            part_id = pic_map[participant["pic"]]
+            participant['structure'] = part_id
 
         address = {}
         postal_address = d.get("postalAddress", {})
@@ -162,7 +158,7 @@ def extract_participants(project_id: str, raw_text: str, cache_participant: dict
     return participants
 
 
-def extract_projects(data: list, cache_participant: dict) -> list:
+def extract_projects(data: list, cache_participant: dict, pic_map) -> list:
     projects = []
     project_ids = set()
 
@@ -212,7 +208,7 @@ def extract_projects(data: list, cache_participant: dict) -> list:
         if metadata.get("numberOfContributors") and len(metadata.get("numberOfContributors")):
             project["participantCount"] = metadata["numberOfContributors"][0]
 
-        project["participants"] = extract_participants(project_id, metadata["participants"][0], cache_participant)
+        project["participants"] = extract_participants(project_id, metadata["participants"][0], cache_participant, pic_map)
 
         if metadata.get("overallBudget") and len(metadata.get("overallBudget")):
             project["budgetTotal"] = metadata["overallBudget"][0]
@@ -285,12 +281,19 @@ def update_eu(args, cache_participant: dict):
 
 def get_pic_correspondance():
     GRIST_TOKEN = os.getenv('GRIST_TOKEN')
-    URL = "https://grist.numerique.gouv.fr/api/docs/s8u4VDyE9RoTp38S22gQE8/download/xlsx"
+    DOC_ID = "s8u4VDyE9RoTp38S22gQE8"
+    TABLE_ID = "From_pic_to_id"
+    URL = f"https://grist.numerique.gouv.fr/api/docs/{DOC_ID}/tables/{TABLE_ID}/records"
     HEADERS = {"Authorization": f"Bearer {GRIST_TOKEN}"}
-    df = pd.read_excel(URL, storage_options=HEADERS, sheet_name='from_pic_to_id')
-    pic_map = {}
-    for e in df.to_dict(orient='records'):
-        if isinstance(e['generalPic'], str) and isinstance(e['from_id_to_ref'], str):
-            pic_map[e['generalPic']] = e['from_id_to_ref'].strip()
-    return pic_map
 
+    r = requests.get(URL, headers=HEADERS, timeout=60)
+    r.raise_for_status()
+
+    pic_map = {}
+    for record in r.json().get('records', []):
+        fields = record.get('fields', {})
+        pic = fields.get('generalPic')
+        ref = fields.get('from_id_to_ref')
+        if isinstance(pic, str) and isinstance(ref, str):
+            pic_map[pic] = ref.strip()
+    return pic_map

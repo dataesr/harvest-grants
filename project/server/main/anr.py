@@ -95,8 +95,9 @@ def harvest_anr_projects(project_type, cache_participant):
         if code_decision in enrichment_dict:
             if 'instrument_financement' in enrichment_dict[code_decision]:
                 new_elt['instrument'] = enrichment_dict[code_decision]['instrument_financement']
-            if 'intitule_du_comite' in enrichment_dict[code_decision]:
-                new_elt['comite'] = enrichment_dict[code_decision]['intitule_du_comite']
+            for k in ['intitule_du_comite', 'code_aap_comites', 'intitule_complet_du_comite', 'mots_cles_ces']:
+                if k in enrichment_dict[code_decision]:
+                    new_elt[k] = enrichment_dict[code_decision][k]
         new_elt['type'] = project_type
         new_elt['name'] = {}
         if isinstance(e.get('Projet.Titre.Francais'), str):
