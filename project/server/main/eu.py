@@ -113,7 +113,7 @@ def fetch_all(case: str, page_size: int = 50) -> list:
     return results
 
 
-def extract_participants(project_id: str, raw_text: str, cache_participant: dict, pic_map) -> list:
+def extract_participants(project_id: str, raw_text: str, cache_participant: dict, pic_map: dict) -> list:
     participants = []
 
     if not len(raw_text):
@@ -130,6 +130,11 @@ def extract_participants(project_id: str, raw_text: str, cache_participant: dict
         participant = {}
         participant["role"] = d["role"]
         participant["pic"] = str(d["pic"])
+        if d["pic"] in pic_map:
+            part_id = pic_map[d["pic"]]
+            participant["participant_id"] = part_id
+            participant["organizations_id"] = part_id
+            participant["identified"] = True
         participant["funding"] = d["eucontribution"]
         participant["id"] = f"{project_id}-{index+1:02d}"
         participant["label"] = {"default": d["legalName"]}
@@ -158,7 +163,7 @@ def extract_participants(project_id: str, raw_text: str, cache_participant: dict
     return participants
 
 
-def extract_projects(data: list, cache_participant: dict, pic_map) -> list:
+def extract_projects(data: list, cache_participant: dict, pic_map: dict) -> list:
     projects = []
     project_ids = set()
 
@@ -187,8 +192,8 @@ def extract_projects(data: list, cache_participant: dict, pic_map) -> list:
         project["id"] = project_id
         if metadata.get("url") and len(metadata.get("url")):
             project["url"] = metadata["url"][0]
-        #project["type"] = metadata["programAbbreviation"][0]  # TODO mapping ?
-        project["type"] = 'Autres financements européens'
+        # project["type"] = metadata["programAbbreviation"][0]  # TODO mapping ?
+        project["type"] = "Autres financements européens"
 
         if metadata.get("startDate") and len(metadata.get("startDate")):
             project["startDate"] = metadata["startDate"][0]
@@ -223,33 +228,24 @@ def extract_projects(data: list, cache_participant: dict, pic_map) -> list:
         if metadata.get("typeOfAction") and len(metadata.get("typeOfAction")):
             action_label = metadata["typeOfAction"][0]
         if metadata.get("programmes") and len(metadata.get("programmes")):
-            program = metadata['programmes'][0]
+            program = metadata["programmes"][0]
         if metadata.get("programId") and len(metadata.get("programId")):
-            program_id = metadata['programId'][0]
+            program_id = metadata["programId"][0]
         if metadata.get("programAbbreviation") and len(metadata.get("programAbbreviation")):
-            program_acronym = metadata['programAbbreviation'][0]
+            program_acronym = metadata["programAbbreviation"][0]
         project["instrument"] = action_label
-        project["action"] = {
-            "code": program_id,
-            "label": {"default": program},
-            "level": 1
-        }
+        project["action"] = {"code": program_id, "label": {"default": program}, "level": 1}
 
         if len(metadata.get("freeKeywords", [])):
             project["keywords"] = {"en": metadata["freeKeywords"]}
 
         priorities = []
-        if isinstance(metadata.get('topicAbbreviation'), list):
-            for topic in metadata.get('topicAbbreviation'):
-                new_prio = {
-                      "type": "topic",
-                    "label": {
-                            "default": topic
-                        }
-                    }
+        if isinstance(metadata.get("topicAbbreviation"), list):
+            for topic in metadata.get("topicAbbreviation"):
+                new_prio = {"type": "topic", "label": {"default": topic}}
                 if new_prio not in priorities:
                     priorities.append(new_prio)
-        project['priorities'] = priorities
+        project["priorities"] = priorities
 
         projects.append(project)
 
@@ -257,14 +253,14 @@ def extract_projects(data: list, cache_participant: dict, pic_map) -> list:
     return projects
 
 
-def harvest_eu_projects(cache_participant: dict, pic_map) -> list:
+def harvest_eu_projects(cache_participant: dict, pic_map: dict) -> list:
     # Il Faut découper car il y a plus de 10000 projets à récupérer
     results = []
     for c in MAPPING:
-        if c in ['he', 'h2020']:
+        if c in ["he", "h2020"]:
             continue
         results += fetch_all(c)
-    results += fetch_all('rest')
+    results += fetch_all("rest")
     projects = extract_projects(results, cache_participant, pic_map)
 
     if len(projects):
@@ -279,13 +275,13 @@ def update_eu(args, cache_participant: dict):
     new_data_eu = harvest_eu_projects(cache_participant, pic_map)
     to_jsonl(new_data_eu, "projects.jsonl")
 
-def get_pic_correspondance():
+
+def get_pic_correspondance() -> dict:
     GRIST_TOKEN = os.getenv('GRIST_TOKEN')
     DOC_ID = "s8u4VDyE9RoTp38S22gQE8"
     TABLE_ID = "From_pic_to_id"
     URL = f"https://grist.numerique.gouv.fr/api/docs/{DOC_ID}/tables/{TABLE_ID}/records"
     HEADERS = {"Authorization": f"Bearer {GRIST_TOKEN}"}
-
     r = requests.get(URL, headers=HEADERS, timeout=60)
     r.raise_for_status()
 
