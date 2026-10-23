@@ -1,4 +1,4 @@
-DOCKER_IMAGE_NAME=ghcr.io/dataesr/harvest-anr
+DOCKER_IMAGE_NAME=ghcr.io/dataesr/harvest-grants
 CURRENT_VERSION=$(shell cat project/__init__.py | cut -d "'" -f 2)
 
 docker-build:

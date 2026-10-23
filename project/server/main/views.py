@@ -8,7 +8,6 @@ main_blueprint = Blueprint("main", __name__,)
 from project.server.main.logger import get_logger
 
 logger = get_logger(__name__)
-queue_name = "harvest-anr"
 
 
 @main_blueprint.route("/", methods=["GET"])
@@ -20,11 +19,11 @@ def run_task_update():
     args = request.get_json(force=True)
     if args.get('v2'):
         with Connection(redis.from_url(current_app.config["REDIS_URL"])):
-            q = Queue(queue_name, default_timeout=2160000)
+            q = Queue(current_app.config["REDIS_QUEUES"][0], default_timeout=2160000)
             task = q.enqueue(create_task_update_v2, args)
     else:
         with Connection(redis.from_url(current_app.config["REDIS_URL"])):
-            q = Queue(queue_name, default_timeout=2160000)
+            q = Queue(current_app.config["REDIS_QUEUES"][0], default_timeout=2160000)
             task = q.enqueue(create_task_update, args)
     response_object = {
         "status": "success",
@@ -37,7 +36,7 @@ def run_task_update():
 @main_blueprint.route("/tasks/<task_id>", methods=["GET"])
 def get_status(task_id):
     with Connection(redis.from_url(current_app.config["REDIS_URL"])):
-        q = Queue(queue_name)
+        q = Queue(current_app.config["REDIS_QUEUES"][0])
         task = q.fetch_job(task_id)
     if task:
         response_object = {

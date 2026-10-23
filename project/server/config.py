@@ -7,8 +7,8 @@ class BaseConfig(object):
     """Base configuration."""
 
     WTF_CSRF_ENABLED = True
+    REDIS_QUEUES = ["harvest-grants"]
     REDIS_URL = "redis://redis:6379/0"
-    QUEUES = ["harvest-anr"]
 
 
 class DevelopmentConfig(BaseConfig):
