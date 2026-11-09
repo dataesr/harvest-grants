@@ -1,6 +1,7 @@
 import re
 from collections import defaultdict
 from typing import Optional
+import pandas as pd
 
 from project.server.main.eu import get_pic_correspondance
 from project.server.main.utils import get_all_struct
@@ -91,4 +92,9 @@ def get_pic_ror_correspondance(pic_map: Optional[dict] = None, all_struct: Optio
             unresolved.append((pic, identifier))
 
     logger.info(f"PIC -> ROR : {len(pic_ror)} / {len(pic_map)} PIC résolus ({len(unresolved)} sans ROR)")
-    return pic_ror
+    data = []
+    for pic_k in pic_ror:
+        data.append({'pic': pic_k, 'ror': pic_ror[pic_k]})
+    pd.DataFrame(data).to_csv('pic_ror.csv', index=False)
+    return data
+    #return pic_ror
